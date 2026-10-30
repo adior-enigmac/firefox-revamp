@@ -14,6 +14,8 @@ Horizontal tabs:
 
 - Everything is in one row, and the tabs fill the space between the buttons.
 - The address bar opens as a floating box near the top of the window, with suggestions below it. It opens on Ctrl+L, on a new tab, or when you double-click a tab.
+- Double-click empty space in the tab strip to open a new tab.
+- Ctrl+Alt+Z hides the top bar and shows it again.
 
 Vertical tabs:
 
@@ -27,8 +29,16 @@ Vertical tabs:
 
 - The buttons move into Firefox's sidebar and wrap to fit its width.
 - The bookmarks and history sidebar (Ctrl+B / Ctrl+H) works as usual.
+- Ctrl+Alt+Z hides the sidebar and shows it again, expanded or collapsed as it was.
+- Drag the sidebar narrower than 150px and it collapses to icons. Expanding it again restores the width it had before.
 
 Switching between the two puts every button back in place.
+
+Both layouts:
+
+- Ctrl+Tab shows a preview of every open tab, centred on the screen. The arrow keys move through the grid.
+- In fullscreen, move the mouse to the top edge to bring the top bar back.
+- Tools → Reveal Hidden Bars on Hover does the same outside fullscreen: a hidden top bar comes back from the top edge, and a hidden sidebar from its side of the window. Both hide again when the mouse moves back into the page.
 
 ## Requirements
 

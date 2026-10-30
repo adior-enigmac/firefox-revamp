@@ -392,6 +392,398 @@
     console.log("[revamp] double-click → urlbar attached");
   };
 
+  // --- Part 4: Ctrl+Tab shows EVERY open tab ------------------------------
+  // Stock draws browser.ctrlTab.maxPreviews thumbnails (default 7, clamped to
+  // 49) plus a "List all N tabs" button. Instead: one preview per tab, and the
+  // grid grows columns (smaller thumbnails) until all rows fit the screen.
+  const attachCtrlTabAll = () => {
+    const ct = window.ctrlTab;
+    if (!ct) return;
+    try {
+      // open() rebuilds the previews whenever this differs from their count
+      Object.defineProperty(ct, "maxTabPreviews", {
+        configurable: true,
+        get() { return Math.max(1, this.tabList?.length ?? 7); },
+      });
+    } catch (err) {
+      console.log("[revamp] ctrlTab override failed", err);
+      return;
+    }
+
+    const STOCK_PER_ROW = 7;
+    const stockOpen = ct.open;
+    ct.open = function (...args) {
+      if (!this.isOpen) {
+        // mirror stock's sizing (open / _openPanel) to pick the column count
+        const n = this.tabCount;
+        const aspect = window.tabPreviews?.aspectRatio ?? 0.5625;
+        const maxH = screen.availHeight * 0.95;
+        let cols = STOCK_PER_ROW;
+        while (cols < n) {
+          const cw = (screen.availWidth * 0.85) / cols;
+          const rows = Math.ceil(n / cols);
+          // canvas + favicon/label/padding per row, panel chrome on top
+          if (rows * (cw * aspect * 1.25 + 40) + 75 <= maxH) break;
+          cols++;
+        }
+        this.previewsPerRow = cols;
+      }
+      return stockOpen.apply(this, args);
+    };
+
+    // every tab is already in the grid → the "List all N tabs" button is noise
+    // (set .hidden, not CSS: advanceFocus skips only [hidden] previews)
+    const stockUpdate = ct.updatePreviews;
+    ct.updatePreviews = function (...args) {
+      const r = stockUpdate.apply(this, args);
+      this.showAllButton.hidden = true;
+      return r;
+    };
+
+    // arrows move through the GRID (stock only steps linearly via Tab):
+    // ←/→ = previous/next, ↑/↓ = same column one row up/down (no-op at edges)
+    const moveTo = (i) => {
+      const p = ct.previews[i];
+      if (!p || p.hidden || !p._tab) return;
+      // same selection handoff as stock advanceFocus
+      if (ct._selectedIndex == -1) p.focus();
+      else ct._selectedIndex = i;
+      gBrowser.warmupTab(p._tab);
+      if (ct._timer) {
+        clearTimeout(ct._timer);
+        ct._timer = null;
+        ct._openPanel();
+      }
+    };
+    document.addEventListener("keydown", (e) => {
+      if (!ct.isOpen) return;
+      const step = {
+        ArrowLeft: -1,
+        ArrowRight: 1,
+        ArrowUp: -ct.previewColumnCount,
+        ArrowDown: ct.previewColumnCount,
+      }[e.key];
+      if (!step) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (Math.abs(step) == 1) {
+        ct.advanceFocus(step > 0);
+      } else {
+        moveTo(ct.previews.indexOf(ct.selected) + step);
+      }
+    }, true);
+    // keep the overlay CENTERED on the monitor: stock positions it once from
+    // an estimated height (wrong once the grid has a custom column count), and
+    // the real size settles after layout / thumbnail loads
+    const recenter = () => {
+      const panel = ct.panel;
+      if (panel.state != "open") return;
+      const r = panel.getOuterScreenRect();
+      if (!r.width || !r.height) return;
+      panel.moveTo(
+        Math.round(screen.left + (screen.width - r.width) / 2),
+        Math.round(screen.top + (screen.height - r.height) / 2)
+      );
+    };
+    ct.panel.addEventListener("popupshown", recenter);
+    new ResizeObserver(recenter).observe(ct.panel);
+    console.log("[revamp] ctrlTab show-all attached");
+  };
+
+  // --- Part 5: Ctrl+Alt+Z per mode ------------------------------------------
+  // Stock's toggleSidebarKb runs SidebarController.handleToolbarButtonClick(),
+  // whose meaning depends on sidebar.visibility: horizontal → shows/hides the
+  // launcher (which our CSS never paints); vertical → expands/collapses, or
+  // hides and forgets expanded-vs-rail. Instead:
+  //   horizontal → hide/show the TOP BAR (revamp.topbar.hidden; CSS section F)
+  //   vertical   → hide/show the sidebar, coming back exactly as it was
+  //                (expanded or rail: launcherExpanded survives a hide)
+  // Set through the launcherVisible setter, not updateVisibility(): that one
+  // ignores `false` under "always-show" and forces expanded under
+  // "hide-sidebar". Only the shortcut is rerouted: the sidebar toolbar button
+  // keeps stock's.
+  const TOPBAR_PREF = "revamp.topbar.hidden";
+  const GLANCE_PREF = "revamp.glance";
+  const prefBool = (p) => {
+    try { return Services.prefs.getBoolPref(p, false); } catch { return false; }
+  };
+
+  const attachToggleKey = () => {
+    const key = document.getElementById("toggleSidebarKb");
+    if (!key) return;
+    // target-phase listener runs before browser-sets.js's bubbling one on
+    // #mainKeyset, so stopping propagation replaces the stock action
+    key.addEventListener("command", (e) => {
+      const sc = window.SidebarController;
+      if (sc?.inSingleTabWindow || sc?.uninitializing) return;
+      e.stopPropagation();
+      if (!isVerticalTabs()) {
+        Services.prefs.setBoolPref(TOPBAR_PREF, !prefBool(TOPBAR_PREF));
+        return;
+      }
+      const s = sc?._state;
+      if (!s) return;
+      // a key press on a glance-peeked sidebar makes it stay
+      if (glance.endSidebarPeek(true)) return;
+      setLauncherVisible(!s.launcherVisible);
+    });
+    console.log("[revamp] Ctrl+Alt+Z per-mode attached");
+  };
+
+  // show/hide the vertical launcher keeping expanded-vs-rail; the open panel
+  // (bookmarks…) goes with it and comes back with it, as with stock's toggle
+  const setLauncherVisible = (visible) => {
+    const sc = window.SidebarController;
+    const s = sc._state;
+    if (visible == s.launcherVisible) return;
+    if (sc._animationEnabled && !window.gReduceMotion) sc._animateSidebarContainer();
+    s.launcherVisible = visible;
+    if (visible && s.command) sc.show(s.command);
+    else if (!visible) sc.hide({ dismissPanel: false });
+    sc.updateToolbarButton();
+  };
+
+  // which side the vertical launcher lives on — from the pref, not the
+  // container's box: a HIDDEN launcher has an empty box at x=0, which read as
+  // "start" even with the sidebar on the right
+  const sidebarAtStart = () => {
+    const start = Services.prefs.getBoolPref("sidebar.position_start", true);
+    return getComputedStyle(document.documentElement).direction == "rtl" ? !start : start;
+  };
+
+  // --- Vertical-mode: drag-narrow snaps to the RAIL ------------------------
+  // Stock snaps to collapsed only below LAUNCHER_MINIMUM_WIDTH (100px) on
+  // drop — so anything dropped at ~100–240px stays a narrow EXPANDED sidebar,
+  // and if the sidebar's content won't let it shrink that far (extension
+  // rows, tab content) it never snaps at all. So judge the drop by where the
+  // POINTER was released, not by the width the launcher managed to reach:
+  // released where the sidebar would be under SNAP_WIDTH → rail, and the
+  // expanded width goes back to what it was before the drag (stock stored
+  // the narrow one). Runs a frame after the drop so stock's own "command"
+  // handler (it re-registers on every show, so listener order isn't fixed)
+  // has finished. SidebarController._state is looked up per event, NOT at
+  // attach: with a restored session the sidebar finishes initializing after
+  // startup, and an attach-time check silently skipped the whole snap.
+  const SNAP_WIDTH = 150;
+  const attachRailSnap = () => {
+    const splitter = document.getElementById("sidebar-launcher-splitter");
+    if (!splitter) return;
+    const state = () => window.SidebarController?._state;
+    let widthBefore = null, pointerX = null;
+    const track = (e) => { pointerX = e.clientX; };
+    splitter.addEventListener("mousedown", (e) => {
+      const s = state();
+      if (!s || e.button != 0) return;
+      // expandedLauncherWidth is unset until the first resize: use the live one
+      widthBefore = s.launcherExpanded ? s.launcherWidth : s.expandedLauncherWidth;
+      pointerX = e.clientX;
+      window.addEventListener("mousemove", track, true);
+    });
+    splitter.addEventListener("command", () => {
+      window.removeEventListener("mousemove", track, true);
+      requestAnimationFrame(() => {
+        const s = state();
+        const c = window.SidebarController?.sidebarContainer?.getBoundingClientRect();
+        // width the sidebar would have with its edge under the pointer
+        const wanted = c && pointerX != null
+          ? Math.round(sidebarAtStart() ? pointerX - c.left : c.right - pointerX)
+          : null;
+        const narrow = s && (s.launcherWidth < SNAP_WIDTH || (wanted != null && wanted < SNAP_WIDTH));
+        if (!isVerticalTabs() || !s?.launcherExpanded || !narrow) return;
+        if (widthBefore) s.expandedLauncherWidth = widthBefore;
+        s.launcherExpanded = false;
+        console.log("[revamp] snapped sidebar to rail");
+      });
+    });
+    console.log("[revamp] rail snap attached");
+  };
+
+  // --- Vertical-mode: no scrollbar on the RAIL -----------------------------
+  // With enough tabs to scroll, the strip's scrollbox (arrowscrollbox shadow
+  // DOM; stock tabs.css gives it scrollbar-width: thin) reserves the bar's
+  // width, so the one-icon-wide rail tabs sit ~3px off the rail's centre.
+  // The rail doesn't need a visible bar — wheel scrolling still works — so
+  // hide it there; the expanded sidebar keeps it. Inline style, because a
+  // user-sheet ::part(scrollbox) rule doesn't reach it.
+  const attachRailScrollbar = () => {
+    const tc = window.gBrowser.tabContainer;
+    const scrollbox = tc.arrowScrollbox?.shadowRoot?.querySelector("scrollbox");
+    if (!scrollbox) return;
+    const sync = () => {
+      if (isVerticalTabs() && !tc.hasAttribute("expanded")) {
+        scrollbox.style.setProperty("scrollbar-width", "none", "important");
+      } else {
+        scrollbox.style.removeProperty("scrollbar-width");
+      }
+    };
+    new MutationObserver(sync).observe(tc, { attributes: true, attributeFilter: ["expanded", "orient"] });
+    sync();
+    console.log("[revamp] rail scrollbar attached");
+  };
+
+  // --- Part 6: GLANCE — edge hover reveals a hidden bar ---------------------
+  // Fullscreen already does this (stock FullScreen: top toggler + launcher
+  // edge). With revamp.glance on (Tools menu), the same works in normal view
+  // for a bar the user hid: horizontal top bar (Ctrl+Alt+Z) → top edge;
+  // vertical sidebar (Ctrl+Alt+Z / right-click → Hide sidebar) → its side's
+  // edge. Like
+  // stock, the bar goes away again once the pointer is back in the page
+  // (a 50px band next to the bar keeps it up), never while a popup from it
+  // is open or the address bar is focused. Edge detection uses stock's
+  // MousePosTracker (pointer position, not a hover target), and a pointer
+  // already resting on the edge doesn't count as an arrival.
+  // Fullscreen fallback: our top-edge watcher also calls
+  // FullScreen.showNavToolbox() when stock's 1px toggler didn't.
+  const glance = (() => {
+    const root = document.documentElement;
+    const toolbox = document.getElementById("navigator-toolbox");
+    const box = (el) => window.windowUtils.getBoundsWithoutFlushing(el);
+    const viewport = () => box(root);
+    const NONE = { top: 0, bottom: -1, left: 0, right: -1 };
+    let popups = 0;
+    let sidebarPeek = false;
+
+    const blocked = () => popups > 0 || gURLBar?.focused;
+    const topbarHidden = () =>
+      !isVerticalTabs() && prefBool(TOPBAR_PREF) && !window.fullScreen;
+    const sidebarHidden = () => {
+      const s = window.SidebarController?._state;
+      return isVerticalTabs() && !window.fullScreen && s && !s.launcherVisible;
+    };
+    const EDGE = 5;   // px of hover strip at the window edge
+
+    // --- top bar ---
+    const topEdge = {
+      getMouseTargetRect() {
+        const fs = window.fullScreen && !root.hasAttribute("inDOMFullscreen");
+        if (!fs && !(prefBool(GLANCE_PREF) && topbarHidden())) return NONE;
+        if (root.hasAttribute("revamp-topbar-peek")) return NONE;
+        return { top: 0, bottom: EDGE - 1, left: 0, right: viewport().width };
+      },
+      onMouseEnter() {
+        if (this._suppress) return;
+        if (window.fullScreen) {
+          if (window.FullScreen?._isChromeCollapsed) FullScreen.showNavToolbox();
+          return;
+        }
+        root.setAttribute("revamp-topbar-peek", "true");
+        MousePosTracker.addListener(topLeave);
+      },
+    };
+    const topLeave = {
+      getMouseTargetRect() {
+        const v = viewport();
+        return { top: box(toolbox).height + 50, bottom: v.height, left: 0, right: v.width };
+      },
+      onMouseEnter() { if (!blocked()) endTopPeek(); },
+    };
+    const endTopPeek = () => {
+      MousePosTracker.removeListener(topLeave);
+      root.removeAttribute("revamp-topbar-peek");
+    };
+
+    // --- sidebar ---
+    const sideEdge = {
+      getMouseTargetRect() {
+        if (!prefBool(GLANCE_PREF) || sidebarPeek || !sidebarHidden()) return NONE;
+        const v = viewport();
+        return sidebarAtStart()
+          ? { top: 0, bottom: v.height, left: 0, right: EDGE - 1 }
+          : { top: 0, bottom: v.height, left: v.width - EDGE, right: v.width };
+      },
+      onMouseEnter() {
+        if (this._suppress) return;
+        sidebarPeek = true;
+        setLauncherVisible(true);
+        MousePosTracker.addListener(sideLeave);
+      },
+    };
+    const sideLeave = {
+      getMouseTargetRect() {
+        const v = viewport();
+        const c = box(window.SidebarController.sidebarContainer);
+        return sidebarAtStart()
+          ? { top: 0, bottom: v.height, left: c.right + 50, right: v.width }
+          : { top: 0, bottom: v.height, left: 0, right: c.left - 50 };
+      },
+      onMouseEnter() { if (!blocked()) endSidebarPeek(); },
+    };
+    // keep = the user made it stay (Ctrl+Alt+Z) → just forget the peek.
+    // Returns whether a peek was active.
+    const endSidebarPeek = (keep = false) => {
+      if (!sidebarPeek) return false;
+      sidebarPeek = false;
+      MousePosTracker.removeListener(sideLeave);
+      if (!keep) setLauncherVisible(false);
+      return true;
+    };
+
+    // (re)register edge watchers, ignoring a pointer already on the edge
+    const rewatch = () => {
+      for (const l of [topEdge, sideEdge]) {
+        MousePosTracker.removeListener(l);
+        l._suppress = true;
+        MousePosTracker.addListener(l);
+        l._suppress = false;
+      }
+    };
+    const reset = () => {
+      endTopPeek();
+      endSidebarPeek();
+      rewatch();
+    };
+
+    // a popup closing may leave the pointer already in the page: re-check
+    const onPopup = (e) => {
+      const t = e.originalTarget;
+      if (t.localName == "tooltip" || t.id == "tab-preview-panel") return;
+      popups = Math.max(0, popups + (e.type == "popupshown" ? 1 : -1));
+      if (e.type == "popuphidden" && !popups) {
+        for (const [l, end] of [[topLeave, endTopPeek], [sideLeave, () => endSidebarPeek()]]) {
+          if (l._hover) end();
+        }
+      }
+    };
+
+    const attachMenuItem = () => {
+      const popup = document.getElementById("menu_ToolsPopup");
+      if (!popup) return;
+      const item = document.createXULElement("menuitem");
+      item.id = "revamp-glance-menuitem";
+      item.setAttribute("type", "checkbox");
+      item.setAttribute("label", "Reveal Hidden Bars on Hover");
+      item.addEventListener("command", () =>
+        Services.prefs.setBoolPref(GLANCE_PREF, !prefBool(GLANCE_PREF)));
+      popup.addEventListener("popupshowing", (e) => {
+        if (e.target == popup) item.toggleAttribute("checked", prefBool(GLANCE_PREF));
+      });
+      popup.append(document.createXULElement("menuseparator"), item);
+    };
+
+    const attachGlance = () => {
+      // toolbox height → CSS section F's collapse offset
+      new ResizeObserver(() =>
+        root.style.setProperty("--revamp-toolbox-h", toolbox.offsetHeight + "px")
+      ).observe(toolbox);
+      document.addEventListener("popupshown", onPopup);
+      document.addEventListener("popuphidden", onPopup);
+      for (const p of [TOPBAR_PREF, GLANCE_PREF, "sidebar.verticalTabs"]) {
+        Services.prefs.addObserver(p, reset);
+      }
+      window.addEventListener("fullscreen", () => setTimeout(reset, 0));
+      window.addEventListener("unload", () => {
+        for (const p of [TOPBAR_PREF, GLANCE_PREF, "sidebar.verticalTabs"]) {
+          try { Services.prefs.removeObserver(p, reset); } catch {}
+        }
+      }, { once: true });
+      attachMenuItem();
+      rewatch();
+      console.log("[revamp] glance attached");
+    };
+
+    return { attachGlance, endSidebarPeek };
+  })();
+
   const attach = () => {
     const gB = window.gBrowser;
     if (!gB) return;
@@ -399,6 +791,11 @@
     attachTabHomeWatch();
     attachMeasure();
     attachDblClick();
+    attachCtrlTabAll();
+    attachToggleKey();
+    attachRailSnap();
+    attachRailScrollbar();
+    glance.attachGlance();
     console.log("[revamp] attached");
   };
 

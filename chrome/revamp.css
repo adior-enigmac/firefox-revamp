@@ -441,6 +441,18 @@
    the one-liner (stock drops it into the hidden #TabsToolbar).
    ====================================================================== */
 @media -moz-pref("sidebar.verticalTabs") {
+  /* drag-narrow STOPS AT THE RAIL: once stock flips the launcher to
+     collapsed mid-drag (< 100px), the splitter still follows the pointer
+     down to 0 — dragged toward the window edge the sidebar shrank to ~3px
+     and looked like it closed itself. Hold the collapsed launcher at the
+     width stock sizes its rail tabs for: --tab-collapsed-width (density
+     dependent — 43px compact, 50px normal). Not a fixed px value: a rail
+     wider than that left the tabs start-aligned and off centre. Not in
+     collapsed fullscreen: stock zeroes it there. */
+  :root:not([fullscreenNavToolboxHidden]) #sidebar-container:not([sidebar-launcher-expanded]) {
+    min-width: var(--tab-collapsed-width, 50px) !important;
+  }
+
   #nav-bar {
     height: 0 !important;
     min-height: 0 !important;
@@ -535,7 +547,60 @@
     justify-content: flex-end !important;
   }
 
+  /* RAIL (collapsed launcher): every icon on the rail's centre line, like
+     the tab icons below. Three things pulled them off it: the extension row's
+     right alignment, back's horizontal-mode window-edge gap (4px start
+     margin, section B), and ☰'s asymmetric stock padding (2px start / 6px
+     end around its icon). The edge gap and ☰ padding are horizontal-row
+     furniture, so they go in both sidebar states. */
+  #sidebar-container:not([sidebar-launcher-expanded]) #vertical-tabs > #uc-vt-ext {
+    justify-content: center !important;
+  }
+  /* the rail's VISIBLE strip (divider → window edge) is wider than the
+     launcher box on the window-edge side, so icons centred in the box read
+     ~2px right of the strip's centre (measured on screen). Nudge the rail
+     contents over visually; translate, so layout and hit-testing stay put. */
+  #sidebar-container[sidebar-positionend]:not([sidebar-launcher-expanded]) #vertical-tabs {
+    translate: -2px 0 !important;
+  }
+  /* rows' 4px side padding would make them wider (☰ 36 + 8 = 44px) than
+     the compact rail (43px) and push the whole rail wider than its tabs */
+  #sidebar-container:not([sidebar-launcher-expanded]) #vertical-tabs > .uc-vt-row {
+    padding-inline: 0 !important;
+  }
+  #vertical-tabs > .uc-vt-row > #back-button {
+    margin-inline-start: 0 !important;
+  }
+  #vertical-tabs > .uc-vt-row #PanelUI-menu-button {
+    padding-inline: 4px !important;
+  }
+  /* …and the TABS: with enough tabs to scroll, the strip's scrollbox
+     reserves its scrollbar's width on the outer side, pushing the rail tabs
+     ~3px off centre. Fixed in the JS (attachRailScrollbar): user-sheet
+     ::part(scrollbox) rules don't reach that shadow scrollbox. */
+
   /* ORDER within the top row: the horizontal-mode rules by id still match
      here (back −40, fwd −39, reload −38, 🧩 20, ☰ 30) → 🧩 sits right
      before ☰. Ext row: DOM order (= the nav bar's pinned order). */
+}
+
+/* ======================================================================
+   F. HIDDEN TOP BAR (horizontal mode, Ctrl+Alt+Z → revamp.topbar.hidden)
+   Same mechanism stock fullscreen uses: pull #navigator-toolbox up by its
+   own height (--revamp-toolbox-h, measured by the JS) so it sits offscreen.
+   NOT display:none / visibility — the floating palette (position:fixed)
+   lives inside the nav bar and must keep working for Ctrl+L.
+   [revamp-topbar-peek] = glance reveal from the top edge (Tools → Reveal
+   Hidden Bars on Hover); it slides back in flow, as in fullscreen.
+   Fullscreen keeps stock's own handling (it writes the inline margin).
+   ====================================================================== */
+@media not -moz-pref("sidebar.verticalTabs") {
+  @media -moz-pref("revamp.topbar.hidden") {
+    :root:not([inFullscreen]) #navigator-toolbox {
+      transition: margin-top 150ms ease;
+    }
+    :root:not([inFullscreen], [revamp-topbar-peek]) #navigator-toolbox {
+      margin-top: calc(-1 * var(--revamp-toolbox-h, 100px)) !important;
+    }
+  }
 }
