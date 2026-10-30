@@ -84,9 +84,9 @@ To use vertical tabs, go to Settings → General → Browser layout, or set `sid
 
 It also turns off Safe Browsing and the add-on blocklist, disables OCSP, and sets DNS-over-HTTPS with no fallback. The header of the file lists every change like this. Install it with `--privacy-prefs`, or copy the lines you want into `<profile>/user.js`.
 
-## After a Firefox update
+## If the script stops loading
 
-Some distros (Arch, for example) delete `config.js` when Firefox updates. If tabs move back to their own row or the sidebar buttons are missing, quit Firefox and run:
+The script loader's files live in Firefox's install folder, not your profile. Normal updates leave them alone, but reinstalling Firefox or switching to another Firefox package can remove them. If tabs move back to their own row or the sidebar buttons are missing, quit Firefox and run:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash -s -- --autoconfig-only
