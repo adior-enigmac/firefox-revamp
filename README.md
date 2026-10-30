@@ -6,6 +6,8 @@ A minimal Firefox UI made with `userChrome.css` and one script. It builds on sto
 
 Horizontal tabs:
 
+![Horizontal tabs, address bar open](docs/horizontal.png)
+
 ```
 [◀][▶][⟳][ tabs ………………………………… ][pinned ext][🧩][☰]
 ```
@@ -14,6 +16,8 @@ Horizontal tabs:
 - The address bar opens as a floating box near the top of the window, with suggestions below it. It opens on Ctrl+L, on a new tab, when you double-click a tab, or when you start typing.
 
 Vertical tabs:
+
+![Vertical tabs, address bar open](docs/vertical.png)
 
 ```
 [◀][▶][⟳][🧩][☰]
