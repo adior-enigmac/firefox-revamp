@@ -1,0 +1,55 @@
+/* =========================================================================
+   my-navbar-order.css  (custom, sits on top of oneline_toolbar.css)
+
+   Reorders the RIGHT-side nav-bar group on the oneliner to read:
+     [ Back ][ Fwd ][ Reload/Stop ] ... [ padlock ... URL ... star ] ... [ Extensions ][ ☰ menu ]
+
+   - Back/Fwd/Reload lead the group (leftmost edge of the nav-bar).
+   - URL bar fills the middle (flex: 1).
+   - Star sits at the URL's right edge, so it lands right before Extensions.
+   - Unified-extensions-button + main menu trail at the far right.
+
+   NOTE: the padlock (#identity-box) + shield (#tracking-protection-icon-container)
+   are children of the URL bar and the star (#star-button-box) is a page-action
+   inside it. They move WITH the URL bar. Pulling the padlock/shield to the far
+   right (detached from the URL field) is a separate, fiddlier tweak — see the
+   optional block at the bottom, left commented out.
+   ========================================================================= */
+
+#nav-bar-customization-target {
+  display: flex !important;
+  align-items: center;
+}
+
+/* --- navigation buttons: far left of the nav group --- */
+#back-button    { order: -30 !important; }
+#forward-button { order: -29 !important; }
+#reload-button  { order: -28 !important; }
+#stop-button    { order: -28 !important; } /* shares the reload slot while loading */
+
+/* --- URL bar: fills the middle --- */
+#urlbar-container {
+  order: 0 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* --- trailing items: push toward the far right --- */
+#downloads-button        { order: 30 !important; }
+#unified-extensions-button { order: 40 !important; }
+#nav-bar-overflow-button { order: 45 !important; }
+#PanelUI-button          { order: 50 !important; } /* hamburger ☰ = very last */
+
+/* =========================================================================
+   OPTIONAL — pull padlock + shield to the RIGHT side of the URL field so the
+   order becomes [ URL ... 🔒 🛡 ★ ]. Uncomment to try. The dropdown arrow may
+   need repositioning; test with a screenshot.
+   -------------------------------------------------------------------------
+.urlbar-input-container {
+  display: flex !important;
+  align-items: center;
+}
+.urlbar-input-box     { order: 0 !important; }
+#identity-box         { order: 10 !important; }
+#tracking-protection-icon-container { order: 11 !important; }
+   ========================================================================= */

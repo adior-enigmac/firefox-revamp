@@ -1,0 +1,233 @@
+/* =========================================================================
+   firefox-revamp — userChrome.css
+   Import stack (order matters) + dark popup/menu theme.
+   ========================================================================= */
+
+/* One-liner base: tabs + nav bar in a single row (MrOtherGuy, MPL-2.0) */
+@import url("firefox-csshacks/chrome/oneline_toolbar.css");
+/* Global order of nav-bar items */
+@import url("my-navbar-order.css");
+/* Main layout: one-liner row, floating URL palette, vertical-tabs sidebar */
+@import url("url-in-active-tab.css");
+/* Hides stock launcher bits (new-tab button in the sidebar, spacer, …) */
+@import url("toggler.css");
+
+/* =========================================================================
+   POPUP / MENU THEME — dark panels, accent (#00ddff) on hover/checked.
+   Follows the active theme's colours via --lwt-* / toolbar variables.
+   ========================================================================= */
+
+
+/* Popup */
+menupopup,
+panel {
+    appearance: none !important;
+    -moz-default-appearance: none !important;
+    --panel-background-color: var(--lwt-accent-color, #1c1b22) !important;
+    --panel-background: var(--lwt-accent-color, #1c1b22) !important;
+    --panel-text-color: var(--lwt-text-color, #fbfbfe) !important;
+    --panel-color: var(--lwt-text-color, #fbfbfe) !important;
+    --panel-border-color: var(--toolbar-field-background-color-focus,
+            #42414d) !important;
+    --menu-background-color: var(--lwt-accent-color, #1c1b22) !important;
+    --menu-color: var(--lwt-text-color, #fbfbfe) !important;
+    --menu-border-color: var(--toolbar-field-background-color-focus,
+            #42414d) !important;
+    --panel-item-hover-bgcolor: var(--toolbarbutton-background-color-hover, rgba(255, 255, 255, 0.1)) !important;
+    --panel-menuitem-border-radius: 6px !important;
+}
+
+menupopup::part(content) {
+    background-color: var(--lwt-accent-color, #1c1b22) !important;
+    color: var(--lwt-text-color, #fbfbfe) !important;
+    border: 1px solid var(--toolbar-field-background-color-focus, #42414d) !important;
+}
+
+/* Items */
+menu,
+menuitem {
+    appearance: none !important;
+    -moz-default-appearance: none !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+
+    background-color: transparent !important;
+    color: var(--lwt-text-color, #fbfbfe) !important;
+
+    transition:
+        background-color 120ms ease,
+        color 120ms ease;
+}
+
+/* Hover */
+menu:is(:hover, [_moz-menuactive="true"]):not([disabled]),
+menuitem:is(:hover, [_moz-menuactive="true"]):not([disabled]) {
+    background-color: var(--toolbarbutton-background-color-hover,
+            rgba(255, 255, 255, 0.1)) !important;
+    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Subview Hover (Hamburger menu text color) */
+panelview .toolbarbutton-1:not([disabled]):is(:hover, :active),
+.subviewbutton:not([disabled]):not(#appMenu-zoomReduce-button2, #appMenu-zoomReset-button2, #appMenu-zoomEnlarge-button2, #appMenu-fullscreen-button2):is(:hover, :active) {
+    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Menubar */
+menubar>menu[open] {
+    border-bottom: 2px solid var(--tab-loading-fill, #00ddff) !important;
+}
+
+/* Separator */
+menuseparator::before {
+    border-top: 1px solid var(--toolbar-field-background-color-focus, #42414d) !important;
+}
+
+/* Disabled */
+menuitem[disabled] {
+    color: var(--toolbar-field-background-color, #2b2a33) !important;
+}
+
+/* Checkbox */
+menuitem[type="checkbox"]>.menu-icon,
+menuitem[type="radio"]>.menu-icon {
+    appearance: none !important;
+    -moz-default-appearance: none !important;
+
+    /* Added these to fix modern Firefox shrinking the icon to 0x0 */
+    width: 14px !important;
+    height: 14px !important;
+    display: inline-block !important;
+    box-sizing: border-box !important;
+    content: "" !important;
+    list-style-image: none !important;
+    -moz-context-properties: fill, fill-opacity;
+
+    /* Instead of outline, use a light themed color for turned off */
+    border: 1px solid transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: var(--toolbar-field-background-color, #2b2a33) !important;
+    border-radius: 50%;
+
+    transition: all 120ms ease;
+}
+
+/* Checkbox shape */
+menuitem[type="checkbox"]>.menu-icon {
+    border-radius: 4px;
+}
+
+/* Checked */
+menuitem[type="checkbox"][checked]>.menu-icon,
+menuitem[type="radio"][checked]>.menu-icon {
+    background-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Hover effect on toggle */
+menuitem:is(:hover, [_moz-menuactive="true"])>.menu-icon {
+    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Hover + checked */
+menuitem:is(:hover, [_moz-menuactive="true"])[checked]>.menu-icon {
+    filter: brightness(1.1);
+}
+
+/* Popup Notifications */
+moz-message-bar,
+notification-message,
+notification,
+#fullscreen-warning,
+#pointerlock-warning {
+    --message-bar-background-color: var(--toolbar-field-background-color,
+            #2b2a33) !important;
+    --message-bar-text-color: var(--lwt-text-color, #fbfbfe) !important;
+    --message-bar-icon-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    background-color: var(--toolbar-field-background-color, #2b2a33) !important;
+    color: var(--lwt-text-color, #fbfbfe) !important;
+    border: 1px solid var(--toolbar-field-background-color-focus, #42414d) !important;
+    border-radius: 6px !important;
+}
+
+moz-message-bar .container,
+notification-message .container {
+    background-color: transparent !important;
+}
+
+moz-message-bar .icon,
+notification-message .icon {
+    fill: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+moz-message-bar moz-button.close,
+notification-message moz-button.close {
+    background-color: transparent !important;
+    fill: var(--lwt-text-color, #fbfbfe) !important;
+    color: var(--lwt-text-color, #fbfbfe) !important;
+    border: none !important;
+}
+
+moz-message-bar moz-button.close:hover,
+notification-message moz-button.close:hover {
+    background-color: var(--toolbarbutton-background-color-hover,
+            rgba(255, 255, 255, 0.1)) !important;
+    fill: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Exit Full Screen Button */
+#fullscreen-exit-button,
+#pointerlock-exit-button {
+    appearance: none !important;
+    -moz-default-appearance: none !important;
+    background-color: transparent !important;
+    color: var(--lwt-text-color, #fbfbfe) !important;
+    border: 1px solid var(--chrome-content-separator-color, #42414d) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    margin-left: 12px !important;
+    transition: all 120ms ease;
+}
+
+#fullscreen-exit-button:hover,
+#pointerlock-exit-button:hover {
+    background-color: var(--toolbarbutton-background-color-hover, rgba(255, 255, 255, 0.1)) !important;
+    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Ctrl+Tab Active Border */
+.ctrlTab-preview:focus>.ctrlTab-preview-inner,
+.ctrlTab-preview[selected="true"]>.ctrlTab-preview-inner {
+    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    box-shadow: 0 0 0 1px var(--toolbarbutton-icon-fill, #00ddff) !important;
+}
+
+/* Autoscroller Theme */
+.autoscroller {
+    /* Theme the inner background circle and border using native variables so it stays the correct size */
+    --panel-background-color: var(--lwt-accent-color, #1c1b22) !important;
+    --panel-border-color: var(--chrome-content-separator-color, #42414d) !important;
+    
+    /* Clean up manual overrides that were making the outer container too big */
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-image: none !important;
+    position: relative !important;
+}
+
+/* Theme the arrows using a masked pseudo-element overlay */
+.autoscroller::after {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    mask-image: var(--autoscroll-background-image) !important;
+    mask-repeat: no-repeat !important;
+    mask-position: center !important;
+    mask-size: auto !important;
+}

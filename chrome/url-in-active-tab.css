@@ -1,0 +1,556 @@
+/* =========================================================================
+   url-in-active-tab.css
+   Pairs with JS/url-in-active-tab.uc.js which relocates #tabbrowser-tabs
+   into #nav-bar-customization-target and measures the floating urlbar.
+
+   FINAL layout (Zen-style):
+     idle:  [ back fwd reload ] [ tabs… ] …spring… [ pinned ext ][ ext ][ ☰ ]
+     Ctrl+L / dblclick-tab: a URL palette appears FLOATING IN THE CENTER OF
+     THE SCREEN (over the page), with the suggestions box flush beneath it —
+     the SAME WIDTH as the palette (width: --uc-fx-w = the query field).
+
+   The urlbar is NOT in the toolbar row at all: idle it is an invisible 0×0
+   fixed box (still focusable — display:none / visibility:hidden would break
+   Ctrl+L); on focus it becomes the palette (position:fixed, left:50% − half
+   width, top: 41px — hugging the 37px toolbar row). All springs are hidden;
+   the tab strip itself (flex:1) fills the middle and pushes the right group
+   to the far edge.
+   NO transform anywhere in the chain (a transformed ancestor would break the
+   position:fixed suggestions view); JS only reports the palette's box into
+   --uc-fx-* so the suggestions mirror it pixel-exactly.
+   ========================================================================= */
+
+/* ======================================================================
+   A. BACKGROUND — blend the whole oneliner row into the built-in theme
+   background so it's one seamless band instead of a distinct strip.
+   ====================================================================== */
+:root:not([chromehidden~="toolbar"]) #navigator-toolbox,
+#nav-bar,
+#TabsToolbar {
+  background: var(--lwt-accent-color, var(--toolbar-bgcolor, #1c1b22)) !important;
+}
+#nav-bar,
+#TabsToolbar {
+  border: none !important;
+  box-shadow: none !important;
+}
+#nav-bar::after,
+#TabsToolbar::after {
+  display: none !important;
+}
+
+/* ======================================================================
+   B. ONELINER GRID OVERRIDES — tab strip now lives inside #nav-bar, so the
+   stock 2-column grid no longer applies. One continuous full-width row.
+   ====================================================================== */
+@media not -moz-pref("sidebar.verticalTabs") {
+  :root:not([chromehidden~="toolbar"]) #navigator-toolbox {
+    display: block !important;   /* was: grid 6fr 4fr */
+  }
+  #TabsToolbar, #nav-bar {
+    grid-row: auto !important;
+    order: 0 !important;
+  }
+}
+
+/* --- HORIZONTAL MODE: the sidebar LAUNCHER (tab rail + its splitter) never
+   paints. Stock re-shows it on every vertical → horizontal switch and the JS
+   hides it a beat later (hideSidebarOnHorizontal) — this rule makes that
+   invisible: pure pref media query, so it applies the instant the pref
+   flips, no flash. Only the launcher: #sidebar-box (bookmarks / history
+   content sidebar, Ctrl+B / Ctrl+H) is a separate element and keeps
+   working. --- */
+@media not -moz-pref("sidebar.verticalTabs") {
+  #sidebar-container,
+  #sidebar-launcher-splitter {
+    display: none !important;
+  }
+}
+
+/* --- VERTICAL TABS MODE: the row-layout rules below are horizontal-mode
+   furniture; in vertical mode the strip lives in stock's sidebar and the
+   one-liner collapses (section F at the end of the file). --- */
+
+/* Empty original TabsToolbar: drop leftover chrome, keep window controls. */
+#TabsToolbar { padding: 0 !important; }
+
+/* --- TAB DRAG & DROP: stock rule killed reordering in our layout ---
+   tabs.css:233: `#navigator-toolbox[movingtab] > #nav-bar { pointer-events: none; }`
+   In STOCK the strip lives OUTSIDE #nav-bar (in #TabsToolbar), so that rule just
+   inert-izes the toolbar during a drag (so a dragged tab flying over buttons
+   doesn't trigger their drop-actions) — the strip itself is unaffected.
+   OUR strip lives INSIDE #nav-bar → startTabDrag sets [movingtab] on the toolbox
+   → the whole strip goes pointer-events:none right AFTER dragstart → dragover/drop
+   never reach #tabbrowser-tabs → no drop indicator, no reorder ("DnD doesn't work").
+   Re-enable the strip only (pointer-events inherits → tabs, scrollbox, indicator
+   all restored); the rest of stock's rule (toolbar/buttons inert) stays intact. */
+#navigator-toolbox[movingtab] > #nav-bar #tabbrowser-tabs {
+  pointer-events: auto !important;
+}
+#TabsToolbar > .titlebar-spacer,
+#TabsToolbar > .toolbar-items,
+#TabsToolbar > #TabsToolbar-customization-target {
+  display: none !important;
+}
+#TabsToolbar:not(:has(> .titlebar-buttonbox-container)) {
+  display: none !important;
+}
+
+/* Full-width nav bar, single flex row, zero extra gaps */
+#nav-bar { width: 100% !important; }
+#nav-bar-customization-target {
+  display: flex !important;
+  align-items: center;
+  width: 100% !important;
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+/* ======================================================================
+   C. ORDER — nav buttons far left, tabs after them, right group at the far
+   right. The urlbar is NOT in this row at all (it floats over the page —
+   see the palette block below); the tab strip (flex:1) absorbs all free
+   space between the nav buttons and the right group.
+   ====================================================================== */
+#back-button        { order: -40 !important; margin-inline-start: 4px !important; } /* small visual gap from the window edge */
+#forward-button     { order: -39 !important; }
+#stop-reload-button { order: -38 !important; }
+#reload-button      { order: -38 !important; }
+#stop-button        { order: -38 !important; }
+
+/* Zen-style pill width — shared by the centered pill AND the suggestions box */
+:root {
+  --uc-pill-w: clamp(300px, 38vw, 560px);
+}
+
+/* The tab strip (relocated here by JS) FILLS THE MIDDLE: it grows up to the
+   extension icons, so the row reads [◀][▶][⟳][tabs……][pinned ext][🧩][☰] with NO
+   stranded gaps — tabs butt against the ext group, the ext group butt against
+   the settings button (user request). Shrinks + scrolls internally when full. */
+#tabbrowser-tabs {
+  order: 0 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+/* ============ THE FLOATING SCREEN-CENTER PALETTE (Zen-style) =============
+   The urlbar is NOT in the toolbar row at all. Idle it is an invisible 0×0
+   box (still FOCUSABLE — display:none / visibility:hidden would make Ctrl+L
+   silently fail, see the idle block). On focus it becomes a palette floating
+   dead-center of the SCREEN, over the page content. NO transform anywhere in
+   this chain: a transformed ancestor would turn the position:fixed
+   suggestions view into a container-relative box and break its coordinates —
+   centering uses left:50% + a half-width physical margin (RTL-proof).
+   JS only REPORTS the palette's box (--uc-fx-*) so the suggestions box below
+   it mirrors its width + position pixel-exactly. */
+/* --- PALETTE-ABOVE-PAGE STACKING (root cause of the "missing field") ------
+   Stock gives #navigator-toolbox z-index 0 (--browser-area-z-index-toolbox)
+   while the content area gets z-index 2 (#tabbrowser-tabbox, position:relative,
+   --browser-area-z-index-tabbox) → THE PAGE PAINTS OVER everything inside the
+   toolbox, including this position:fixed palette. The suggestions view still
+   showed because it is a top-layer popover that escapes all stacking contexts
+   — that is exactly the "dropdown visible but the field/header invisible"
+   symptom. Raise the toolbox above the content: 5 > tabbox 2 > sidebar 1 >
+   expand-on-hover sidebar 4. Panels / menupopups / the urlbar view are
+   top-layer and unaffected; the toolbox and content never overlap in normal
+   layout, so nothing else changes. */
+#navigator-toolbox {
+  z-index: 5 !important;
+}
+
+#urlbar-container {
+  --urlbar-border-radius: 14px !important;   /* palette corners: feeds the inner field AND the suggestions box */
+  position: fixed !important;
+  left: 50% !important;
+  /* top edge hugging the toolbar row (the row measures 37px tall) — a 4px
+     breathing gap, NOT a blank strip */
+  top: 41px !important;
+  height: 44px !important;
+  width: var(--uc-pill-w) !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  /* left edge at 50% − half width (physical margin = RTL-proof) */
+  margin: 0 0 0 calc(var(--uc-pill-w) / -2) !important;
+  /* NO horizontal padding HERE: this container is the painted field surface
+     and its full width must equal the suggestions box's width exactly (the
+     JS measurement --uc-fx-w comes from THIS box). The 12px icon/text inset
+     lives on #urlbar below instead — that old padding made the visible field
+     24px narrower than the dropdown. */
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+  z-index: 10 !important;
+  /* the focus surface — the SAME color the suggestions paint → one
+     continuous box (idle is invisible anyway) */
+  background: var(--urlbar-background-color-focus, var(--toolbar-field-background-color, #2b2a33)) !important;
+  border: none !important;
+  border-radius: var(--urlbar-border-radius, 14px) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;   /* floating-over-page depth */
+  outline: none !important;
+  transition: opacity 90ms ease !important;   /* fade in/out with focus */
+}
+/* IDLE = urlbar not focused / not open / no focus inside → HIDDEN but
+   focusable: opacity + zero size + clip. NEVER display:none or
+   visibility:hidden — both make the input unfocusable, which silently kills
+   Ctrl+L (and the double-click-tab → urlbar). pointer-events:none so the
+   invisible box can never intercept clicks on the page. */
+#urlbar-container:not(:has(#urlbar[focused])):not(:has(#urlbar[open])):not(:focus-within) {
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: clip !important;   /* keeps the inner icons from spilling out of the 0×0 box */
+  pointer-events: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* --- inside the palette: the CONTAINER is the only painted surface. Inner
+   elements never draw their own box/ring; the input row fills the palette and
+   centers icons + text vertically at its middle. UNCONDITIONAL — the same
+   geometry in every visible state, so NOTHING shifts while typing. --- */
+#urlbar-container #urlbar > .urlbar-background {
+  display: none !important;
+}
+#urlbar-container .urlbar-input-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  gap: 6px !important;   /* icon ↔ text spacing inside the pill */
+  height: 100% !important;
+  min-height: 0 !important;
+  align-items: center !important;
+  /* stock `.urlbar[popover-open] > & { margin-block: -growth; padding-block:
+     growth }` yanks the row 4px up while suggestions are open (measured
+     textCenterDelta −4). Kill the growth margins in ALL states. */
+  margin-block: 0 !important;
+  margin-inline: 0 !important;
+  padding-block: 0 !important;
+}
+#urlbar-container #urlbar {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  /* icon/text inset — the CONTAINER has padding:0 so the painted field
+     surface spans the full 560px = exactly the suggestions box width */
+  padding-inline: 12px !important;
+  /* stock `.urlbar { min-height: var(--urlbar-height) }` (~34px) would
+     overflow the inset pill's inner height (~31px) → input row poking out
+     of the pill's bottom edge. The pill's box defines the height now. */
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+}
+#urlbar[focused] .urlbar-input,
+#urlbar[open] .urlbar-input {
+  font-size: 15px !important;
+}
+/* --- suggestions dropdown: EXPLICIT positioning, no anchor math ------------
+   JS measures the FLOATING PALETTE (viewport coords) into --uc-fx-*, so these
+   put the view at IDENTICAL left AND IDENTICAL WIDTH as the query field —
+   width: var(--uc-fx-w) is literally the palette's measured width, so the
+   suggestions box is NEVER wider or narrower than the field it belongs to.
+   Vertically it starts 1px INTO the palette's bottom edge → one flush
+   continuous surface, no gap, no offset, no anchor fallback surprises.
+   CSS fallbacks (50vw / 41px / --uc-pill-w) keep the view sane even before
+   the first measurement.
+   Anchor positioning is disabled on both sides (anchor-name:none below +
+   position-anchor pointing at a never-declared name). */
+#urlbar .urlbar-input-container {
+  anchor-name: none !important;   /* kills the stock --urlbar-anchor */
+}
+#urlbar-container .urlbarView {
+  position: fixed !important;
+  left: var(--uc-fx-x, calc(50vw - var(--uc-pill-w) / 2)) !important;
+  right: auto !important;
+  top: calc(var(--uc-fx-y, 41px) + var(--uc-fx-h, 44px) - 1px) !important;
+  width: var(--uc-fx-w, var(--uc-pill-w)) !important;
+  /* ORIGINAL curves: same 14px radius as the field (base state) */
+  border-radius: var(--urlbar-border-radius, 14px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* built-in `.urlbarView:popover-open` re-anchors the view to the input row
+     and makes these insets resolve INSIDE its position-area (→ shifted down
+     below the field = the gap). Reset both so left/top resolve against the
+     viewport = exact placement, open or not. */
+  position-area: none !important;
+  position-anchor: none !important;
+  /* the stock joint background deliberately OUTSETS past the view box —
+     inset-inline = -(overhang + --urlbarview-margin-inline), so BOTH must be
+     0 or the beige box stays wider than the field. */
+  --urlbar-background-overhang-open: 0px !important;
+  --urlbarview-margin-inline: 0px !important;
+  --urlbarview-margin-block: 0px !important;
+}
+
+/* --- ONE CONTINUOUS BOX: while suggestions are open, the field and the view
+   form a single surface — flat seam, same color, no shadow line between.
+   Gated THREE ways so it fires no matter which open-state signal works in
+   this build: #urlbar[open] (JS toggle), the view's :popover-open, or the
+   input's aria-expanded="true" — all set together in UrlbarView.open(),
+   but only some of them were observed to match. --- */
+#urlbar-container:has(#urlbar[open]),
+#urlbar-container:has(.urlbarView:popover-open),
+#urlbar-container:has(#urlbar input[aria-expanded="true"]) {
+  border-radius: var(--urlbar-border-radius, 4px) var(--urlbar-border-radius, 4px) 0 0 !important;
+  box-shadow: none !important;
+}
+/* view: square top edge, rounded bottom, one outer shadow for the combined box */
+/* ORIGINAL one-box look while open: square top edge (meets the field with a
+   1px overlap), rounded 14px bottom corners → the combined box reads as ONE
+   rounded container, field on top, suggestions below. */
+#urlbar-container:has(#urlbar[open]) .urlbarView,
+#urlbar-container:has(.urlbarView:popover-open) .urlbarView,
+#urlbar-container:has(#urlbar input[aria-expanded="true"]) .urlbarView {
+  border-radius: 0 0 var(--urlbar-border-radius, 14px) var(--urlbar-border-radius, 14px) !important;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.45) !important;
+}
+/* --- ONE CONTINUOUS BOX v2: BYPASS the stock joint-background machinery ---
+   Dump proved why the band-aid vars never landed: the joint bg's composite
+   vars (--urlbarview-joint-background-outset-inline etc.) are declared CLOSER
+   to that element than anything inherited from .urlbarView, so my zeros never
+   reached it (inset stayed -7px → box 14px too wide), and its clip-path cut
+   the painted surface's top → the visible gap between field and suggestions.
+   The VIEW'S OWN BOX is already pixel-identical to the field
+   (dump: view [340,39,320] vs container [340,-3,320], bottom 40 → 1px
+   overlap). So: drop the stock joint bg entirely, paint the view directly
+   with the SAME color as the field → one flush surface, no insets, no clip. */
+#urlbar-container .urlbarView > .urlbarView-background {
+  display: none !important;
+}
+#urlbar-container .urlbarView {
+  background: var(--urlbar-background-color-focus, var(--toolbar-field-background-color, #2b2a33)) !important;
+  overflow: clip !important;   /* rows measured 2px wider than the view — trim flush */
+}
+#urlbar-container .urlbarView .urlbarView-row {
+  margin-inline: 0 !important;   /* remove the ±2px row overhang */
+  /* row highlight keeps its STOCK radius (original look) */
+}
+/* --- suggestions: NO top/bottom padding — rows hug the box edges, and the
+   first row sits right against the url tab bar (both requested). --- */
+#urlbar-container .urlbarView {
+  padding-block: 0 !important;
+}
+#urlbar-container .urlbarView > :first-child {
+  margin-block-start: 0 !important;
+  padding-block-start: 0 !important;
+}
+#urlbar-container .urlbarView > :last-child {
+  margin-block-end: 0 !important;
+  padding-block-end: 0 !important;
+}
+/* ACTUAL structure (from the dump): view > background (hidden!), results,
+   menu, one-offs — so the `> :first-child` rules above matched the HIDDEN
+   background div and the 6px uncolored strips survived. Target the real
+   results container itself: its block padding held the space above the first
+   (highlighted) row and below the last, and its -2px margins made it 2px
+   wider than the view. */
+#urlbar-container .urlbarView .urlbarView-results {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;   /* stock = 100% + 2×row-gutter → rows skewed/clipped right */
+}
+#urlbar-container .urlbarView .urlbarView-results > :first-child {
+  margin-block-start: 0 !important;
+  padding-block-start: 0 !important;
+}
+#urlbar-container .urlbarView .urlbarView-results > :last-child {
+  margin-block-end: 0 !important;
+  padding-block-end: 0 !important;
+}
+/* rows nested deeper: first/last row block margins too (the inset pill look
+   at the box bottom) */
+#urlbar-container .urlbarView .urlbarView-row:first-child,
+#urlbar-container .urlbarView ul > li:first-child {
+  margin-block-start: 0 !important;
+}
+#urlbar-container .urlbarView .urlbarView-row:last-child,
+#urlbar-container .urlbarView ul > li:last-child {
+  margin-block-end: 0 !important;
+}
+/* (old overlay rules removed — the urlbar is the floating screen-center
+   palette now; the row holds no field at all and tabs need no cap) */
+
+/* Far right: extensions, overflow, downloads, hamburger menu (no gap) */
+#unified-extensions-button { order: 20 !important; }
+#nav-bar-overflow-button   { order: 21 !important; }
+#downloads-button          { order: 22 !important; }
+#fxa-toolbar-menu-button   { order: 26 !important; }
+#PanelUI-button            { order: 30 !important; }
+
+/* ---- SPRINGS: ALL hidden — the tab strip grows into the middle instead
+   (see above). The ONLY spring left in the target is #vertical-spacer
+   (class titlebar-spacer): stock caps it (~112px wide), so instead of
+   absorbing the free space it just stranded the extension icons mid-bar
+   with a 112px gap on the tabs side and a 1200px+ void on the settings
+   side — both reported gaps. ---- */
+#nav-bar-customization-target > toolbarspring {
+  display: none !important;
+}
+
+/* ---- Pinned extensions go AFTER the (now hidden) urlbar slot at order 10
+   and BEFORE the extensions menu (20). The pinned item's real class is
+   "unified-extensions-item" (a toolbaritem, not .webextension-browser-action). ---- */
+#nav-bar-customization-target > .unified-extensions-item:not(#unified-extensions-button),
+#nav-bar-customization-target > .webextension-browser-action,
+#nav-bar-customization-target > .webextension-toolbar-item {
+  order: 15 !important;
+}
+
+/* ======================================================================
+   D. URLBAR PILL CONTENT — always stock: the pill shows the identity/site
+   icons + URL label when idle and swaps in the input on focus with ZERO
+   layout change (same icons, same box, same geometry → nothing shifts when
+   focus lands). The whole old idle-collapse machinery (width:0 field,
+   hidden icons, collapsed label box, zero-width input) is gone — the pill
+   is a real, always-visible field now.
+   NOTE: `#urlbar-container` is deliberately NOT in this reset: the pill's
+   `margin: 0 0 0 calc(…)` (section C) is what centers it, and an older
+   `margin-inline: 0` here used to wipe that margin.
+   ====================================================================== */
+/* NOTE: `#urlbar` is deliberately NOT in this reset — its `padding-inline:
+   12px` (palette block above) is the icon/text inset now, and zeroing it
+   here would strip the inset without restoring the container's padding. */
+#urlbar .urlbar-input-container {
+  padding-inline: 0 !important;
+  margin-inline: 0 !important;
+}
+.urlbar-go-button,
+#urlbar .urlbar-go-button {
+  display: none !important;
+}
+
+/* ======================================================================
+   E. TAB — the in-tab URL ("tab url bar") is fully RETIRED: the urlbar is
+   the floating palette now, so tabs are just tabs — normal title label,
+   stock sizing.
+   - .uc-url-label: any injected URL text stays hidden (the JS injection is
+     switched off too — SHOW_URL_IN_TAB flag).
+   - the old `min-width: 160px` on the SELECTED tab existed to give the
+     overlaid address field a wide enough host — it also STRETCHED PINNED
+     tabs (stock ≈44px, favicon-only) to 160px whenever they were selected.
+     Removed → pinned tabs keep their compact look in every state.
+   ====================================================================== */
+.uc-url-label {
+  display: none !important;
+}
+
+/* ======================================================================
+   F. VERTICAL TABS MODE — STOCK OWNS THE SIDEBAR.
+   The sidebar, the strip orientation, pinned tabs, the launcher — all
+   stock. What we add: the one-liner row collapses, and its controls (moved
+   by JS into two <toolbar> rows inside #vertical-tabs) sit above the strip:
+     [◀][▶][⟳][🧩][☰]
+     [ tab strip ]
+                [pinned ext…]   ← right-aligned, bottom of the sidebar
+   Stock's ⚙ "Customize sidebar" button (sidebar-main's shadow DOM) is
+   hidden by the JS; it stays reachable from the sidebar's right-click menu.
+
+   NEVER display:none the nav bar itself: the focusable floating palette
+   (position:fixed) lives inside it and must keep working for Ctrl+L —
+   height:0 removes the bar visually while focus still works, and the
+   fixed palette still renders over the page.
+
+   Toggle round-trips are handled by the JS watcher: horizontal → controls
+   restored to their exact nav-bar slots, rows removed, strip re-homed into
+   the one-liner (stock drops it into the hidden #TabsToolbar).
+   ====================================================================== */
+@media -moz-pref("sidebar.verticalTabs") {
+  #nav-bar {
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: clip !important;
+  }
+
+  /* square the page's corner next to the sidebar: stock rounds the
+     .browserContainer edge that faces chrome (content-area.css,
+     border-start-{start,end}-radius: var(--content-area-start-radius) =
+     --border-radius-medium) — with the nav bar collapsed that curve sits
+     at the very top beside the sidebar. */
+  /* …and the non-nova path (content-area.css:377-380) rounds the same
+     corner with a LITERAL var(--border-radius-medium), not the variable —
+     plus the dialog backdrop mirrors it (content-area.css:1044-1052). Zero
+     the radius on both directly. */
+  #tabbrowser-tabpanels .browserContainer {
+    --content-area-start-radius: 0px !important;
+    border-radius: 0 !important;
+  }
+  #tabbrowser-tabpanels .dialogOverlay[topmost="true"] {
+    border-radius: 0 !important;
+  }
+
+  /* square the WINDOW's top corner on the sidebar's side: with GTK client-side
+     decorations stock rounds the window's top corners (browser.css: body
+     border-top-{left,right}-radius: env(-moz-gtk-csd-titlebar-radius)), and
+     with the nav bar collapsed that corner is the sidebar's top corner.
+     position_start=false → sidebar on the right. */
+  @media not -moz-pref("sidebar.position_start") {
+    :root[customtitlebar] body { border-top-right-radius: 0 !important; }
+  }
+  @media -moz-pref("sidebar.position_start") {
+    :root[customtitlebar] body { border-top-left-radius: 0 !important; }
+  }
+
+  /* The controls move into stock's strip area — JS puts them in two
+     <toolbar> rows (#uc-vt-top, #uc-vt-ext) inside #vertical-tabs. Stock
+     never needed a direction there (the strip was its only child), so we
+     make it a column: [top row] [strip — fills the rest] [ext row]. */
+  #vertical-tabs {
+    flex-direction: column !important;
+  }
+  #vertical-tabs > #uc-vt-top       { order: -20 !important; }
+  #vertical-tabs > #tabbrowser-tabs { order: 0 !important; }
+  #vertical-tabs > #uc-vt-ext       { order: 10 !important; }
+
+  /* RESPONSIVE rows: flex-wrap, so the icons follow the sidebar's width —
+     the collapsed rail (~48px) shows one per line, wider sidebars fill the
+     line and wrap only what doesn't fit. No breakpoints to keep in sync
+     with stock's widths. Being real <toolbar>s, the buttons get stock's
+     exact `toolbar .toolbarbutton-1` design; only the toolbar's own chrome
+     (background/border/min-height) is neutralised so the rows blend into
+     the sidebar. */
+  #vertical-tabs > .uc-vt-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 2px 4px !important;   /* the ONLY spacing between icons (row / column) */
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 2px 4px !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* icon-only: hide ALL text — button labels, extension name/subtext */
+  .uc-vt-row .toolbarbutton-text,
+  .uc-vt-row .toolbarbutton-label,
+  .uc-vt-row .unified-extensions-item-contents,
+  .uc-vt-row .unified-extensions-item-subtext,
+  .uc-vt-row .unified-extensions-item-text {
+    display: none !important;
+  }
+  /* UNIFORM GAPS: the row `gap` above is the only spacing. Stock adds its
+     own per-item insets (diag: ☰'s toolbaritem 3px padding each side → 38px
+     wide; extension items a 2px margin; back carries our 4px horizontal edge
+     inset) — zero them all on the row's items. The buttons inside keep
+     stock's icon padding, so the hover/active design is untouched. */
+  .uc-vt-row > :is(toolbarbutton, toolbaritem) {
+    margin: 0 !important;
+    padding-inline: 0 !important;
+  }
+  /* extension row hugs the right edge */
+  #vertical-tabs > #uc-vt-ext {
+    justify-content: flex-end !important;
+  }
+
+  /* ORDER within the top row: the horizontal-mode rules by id still match
+     here (back −40, fwd −39, reload −38, 🧩 20, ☰ 30) → 🧩 sits right
+     before ☰. Ext row: DOM order (= the nav bar's pinned order). */
+}
