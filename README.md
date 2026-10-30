@@ -99,8 +99,8 @@ Run the install command again. Each run backs up your previous `chrome/` folder.
 ## Customising
 
 - Accent colour: `#00ddff` in `chrome/userChrome.css`.
-- Address bar width: `--uc-pill-w` in `chrome/url-in-active-tab.css`.
-- Sidebar layout: section F of `chrome/url-in-active-tab.css`, and `syncControlsHome()` in `chrome/JS/url-in-active-tab.uc.js`.
+- Address bar width: `--uc-pill-w` in `chrome/revamp.css`.
+- Sidebar layout: section F of `chrome/revamp.css`, and `syncControlsHome()` in `chrome/JS/revamp.uc.js`.
 
 Firefox only reads these files at startup, so restart it fully after a change.
 
@@ -108,7 +108,7 @@ Firefox only reads these files at startup, so restart it fully after a change.
 
 - Nothing changed: check that `toolkit.legacyUserProfileCustomizations.stylesheets` is `true`, and that you installed into the profile Firefox is using (listed in `about:support`).
 - The styling loads but the layout is wrong: the script isn't running. Run the installer with `--autoconfig-only`, then restart Firefox.
-- The script logs its actions to the Browser Console (Ctrl+Shift+J) with the prefix `[url-in-active-tab]`.
+- The script logs its actions to the Browser Console (Ctrl+Shift+J) with the prefix `[revamp]`.
 
 ## Credits
 

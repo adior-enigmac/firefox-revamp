@@ -8,7 +8,7 @@
 /* Global order of nav-bar items */
 @import url("my-navbar-order.css");
 /* Main layout: one-liner row, floating URL palette, vertical-tabs sidebar */
-@import url("url-in-active-tab.css");
+@import url("revamp.css");
 /* Hides stock launcher bits (new-tab button in the sidebar, spacer, …) */
 @import url("toggler.css");
 

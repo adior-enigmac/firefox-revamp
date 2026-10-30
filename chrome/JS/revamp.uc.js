@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name           URL-in-Active-Tab
+// @name           firefox-revamp
 // @description    Zen-style: nav buttons + tabs left, actions right in the
 //                 one-liner; the URL bar is a FLOATING PALETTE in the CENTER
 //                 OF THE SCREEN (Ctrl+L / dblclick-tab), invisible idle:
@@ -9,7 +9,7 @@
 // ==/UserScript==
 
 (() => {
-  console.log("[url-in-active-tab] evaluating");
+  console.log("[revamp] evaluating");
 
   // --- Vertical-tabs mode awareness -----------------------------------------
   // GROUND-UP CONTRACT: STOCK owns vertical mode — its sidebar, the strip's
@@ -47,7 +47,7 @@
     target.insertBefore(tabs, target.firstChild);
     // Hide the now-empty original TabsToolbar via a marker attribute.
     document.documentElement.setAttribute("uc-tabs-in-navbar", "true");
-    console.log("[url-in-active-tab] relocated tab strip into nav bar");
+    console.log("[revamp] relocated tab strip into nav bar");
     return true;
   };
 
@@ -61,7 +61,7 @@
     if (!tabs || !target || tabs.parentElement === target) return;
     target.insertBefore(tabs, target.firstChild);
     document.documentElement.setAttribute("uc-tabs-in-navbar", "true");
-    console.log("[url-in-active-tab] re-homed tab strip after toggle");
+    console.log("[revamp] re-homed tab strip after toggle");
     try { remeasure(); } catch {}
   };
 
@@ -152,7 +152,7 @@
       CTRL_HOME.set(node, { parent: node.parentElement, next: node.nextSibling });
     }
     row.appendChild(node);
-    console.log(`[url-in-active-tab] moved ${node.id || node.localName} into ${row.id}`);
+    console.log(`[revamp] moved ${node.id || node.localName} into ${row.id}`);
   };
 
   const syncControlsHome = () => {
@@ -205,9 +205,9 @@
           if (node.parentElement === parent && (!next || node.nextSibling === next)) continue;
           try {
             parent.insertBefore(node, next);
-            if (pass === 0) console.log(`[url-in-active-tab] restored ${node.id || node.localName} to nav bar`);
+            if (pass === 0) console.log(`[revamp] restored ${node.id || node.localName} to nav bar`);
           } catch (err) {
-            console.warn(`[url-in-active-tab] restore failed for ${node.id || node.localName}`, err);
+            console.warn(`[revamp] restore failed for ${node.id || node.localName}`, err);
           }
         }
       }
@@ -236,15 +236,15 @@
     if (isVerticalTabs()) return;                 // only acts on the way back to horizontal
     const sc = window.SidebarController;
     if (!sc || !sc._state) {
-      console.warn("[url-in-active-tab] SidebarController._state unavailable");
+      console.warn("[revamp] SidebarController._state unavailable");
       return false;
     }
     try { sc.hide(); } catch {}                    // close any open panel (no-op if none)
     try {
       if (!sc._state.launcherVisible) return true; // already hidden
       sc._state.updateVisibility(false);           // hide the launcher strip
-    } catch (e) { console.warn("[url-in-active-tab] launcher hide failed:", e); return false; }
-    console.log("[url-in-active-tab] hid sidebar launcher on horizontal");
+    } catch (e) { console.warn("[revamp] launcher hide failed:", e); return false; }
+    console.log("[revamp] hid sidebar launcher on horizontal");
     return true;
   };
 
@@ -283,7 +283,7 @@
       mo.disconnect();
     }, { once: true });
     syncAll();   // initial state (started in vertical mode?)
-    console.log("[url-in-active-tab] vertical-tabs re-home watch attached");
+    console.log("[revamp] vertical-tabs re-home watch attached");
   };
 
   // --- Part 3: measure the FLOATING urlbar palette → CSS vars -------------
@@ -342,7 +342,7 @@
     // with tabs)
     const field = document.getElementById("urlbar-container");
     if (field) new ResizeObserver(remeasure).observe(field);
-    console.log("[url-in-active-tab] field measurement attached");
+    console.log("[revamp] field measurement attached");
   };
 
   // --- Part 4: double-click a tab = Ctrl+L (focus the address bar) --------
@@ -352,10 +352,10 @@
     try {
       gURLBar.focus();
       gURLBar.select();
-      console.log("[url-in-active-tab] urlbar focused");
+      console.log("[revamp] urlbar focused");
       return true;
     } catch (err) {
-      console.log("[url-in-active-tab] urlbar focus failed", err);
+      console.log("[revamp] urlbar focus failed", err);
       return false;
     }
   };
@@ -372,7 +372,7 @@
       if (tab !== gB.selectedTab) gB.selectedTab = tab; // TabSelect → remeasure
       focusUrlbar();
     });
-    console.log("[url-in-active-tab] double-click → urlbar attached");
+    console.log("[revamp] double-click → urlbar attached");
   };
 
   const attach = () => {
@@ -382,7 +382,7 @@
     attachTabHomeWatch();
     attachMeasure();
     attachDblClick();
-    console.log("[url-in-active-tab] attached");
+    console.log("[revamp] attached");
   };
 
   const UC = window.UC_API;
