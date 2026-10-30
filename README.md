@@ -114,3 +114,7 @@ Firefox only reads these files at startup, so restart it fully after a change.
 
 - `chrome/firefox-csshacks/chrome/oneline_toolbar.css`: [MrOtherGuy/firefox-csshacks](https://github.com/MrOtherGuy/firefox-csshacks), MPL-2.0, unmodified.
 - `vendor/fx-autoconfig/`: [MrOtherGuy/fx-autoconfig](https://github.com/MrOtherGuy/fx-autoconfig) 0.10.16, MPL-2.0.
+
+## License
+
+[MPL-2.0](LICENSE). The vendored files in `chrome/firefox-csshacks/` and `vendor/fx-autoconfig/` keep their own MPL-2.0 licenses.
