@@ -362,11 +362,28 @@
 
   const attachDblClick = () => {
     const gB = window.gBrowser;
-    gB.tabContainer.addEventListener("dblclick", (e) => {
+    const tc = gB.tabContainer;
+    tc.addEventListener("dblclick", (e) => {
       // don't hijack the close button / mute overlay
       if (e.target.closest?.(".tab-close-button, .tab-icon-overlay")) return;
       const tab = e.target.closest?.(".tabbrowser-tab");
-      if (!tab) return;
+      if (!tab) {
+        // empty strip space → new tab. Stock on_dblclick bails in horizontal
+        // mode with a custom titlebar (defers to the WM's titlebar action),
+        // so only cover that case; vertical mode already works natively.
+        if (
+          e.button === 0 &&
+          CustomTitlebar.enabled &&
+          !tc.verticalMode &&
+          e.target === tc.arrowScrollbox &&
+          e.composedTarget?.localName !== "toolbarbutton" &&
+          !tc._blockDblClick
+        ) {
+          BrowserCommands.openTab();
+          e.preventDefault();
+        }
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       if (tab !== gB.selectedTab) gB.selectedTab = tab; // TabSelect → remeasure
