@@ -375,37 +375,6 @@
     console.log("[url-in-active-tab] double-click → urlbar attached");
   };
 
-  // --- Part 5: typing with nothing focused opens the palette ---------------
-  // New tabs open the palette on their own: stock focuses the urlbar on every
-  // new tab (Ctrl+T / new-tab button) and the palette shows on focus — no
-  // guard (the old new-tab auto-blur was retired by user request). This only
-  // covers the case where focus sits nowhere: a printable key opens the field
-  // and takes the character.
-  const attachTypeToSearch = () => {
-    document.addEventListener(
-      "keydown",
-      (e) => {
-        if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-        if (!e.key || e.key.length !== 1) return;
-        const ae = document.activeElement;
-        if (ae && ae !== document.body && ae !== document.documentElement) return;
-        e.preventDefault();
-        if (focusUrlbar()) {
-          try {
-            const input = gURLBar.inputField;
-            input.value = e.key;
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-            input.setSelectionRange(input.value.length, input.value.length);
-          } catch (err) {
-            console.log("[url-in-active-tab] char insert failed", err);
-          }
-        }
-      },
-      true
-    );
-    console.log("[url-in-active-tab] type-to-search attached");
-  };
-
   const attach = () => {
     const gB = window.gBrowser;
     if (!gB) return;
@@ -413,7 +382,6 @@
     attachTabHomeWatch();
     attachMeasure();
     attachDblClick();
-    attachTypeToSearch();
     console.log("[url-in-active-tab] attached");
   };
 

@@ -13,7 +13,7 @@ Horizontal tabs:
 ```
 
 - Everything is in one row, and the tabs fill the space between the buttons.
-- The address bar opens as a floating box near the top of the window, with suggestions below it. It opens on Ctrl+L, on a new tab, when you double-click a tab, or when you start typing.
+- The address bar opens as a floating box near the top of the window, with suggestions below it. It opens on Ctrl+L, on a new tab, or when you double-click a tab.
 
 Vertical tabs:
 
