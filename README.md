@@ -54,6 +54,7 @@ Options:
 |---|---|
 | `./install.sh --profile ~/.mozilla/firefox/xxxx.default-release` | Install into a specific profile. |
 | `./install.sh --autoconfig-only` | Reinstall only the loader (see *Updating Firefox*). |
+| `./install.sh --privacy-prefs` | Also apply the optional privacy/performance prefs (see below). |
 | `./install.sh --uninstall` | Remove everything the installer added. |
 | `./install.sh --yes` | Skip the confirmation prompt. |
 
@@ -68,6 +69,16 @@ Then start Firefox. To try vertical tabs, go to **Settings → General → Brows
    - macOS: `Firefox.app/Contents/Resources/`
 4. **Set the prefs:** set the prefs from `user.js` in `about:config`, or append them to `<profile>/user.js`.
 5. **Clear the startup cache:** in `about:support`, click **Clear startup cache…**, then restart Firefox.
+
+## Optional: privacy & performance prefs
+
+`extras/privacy-performance.user.js` is the author's personal `user.js`. It isn't needed for the UI.
+
+- **What it does:** removes telemetry and sponsored content, hardens privacy (strict tracking protection, HTTPS-only mode, DNS-over-HTTPS), and tunes Firefox for a low-RAM, 2-core machine.
+- **Some lines trade safety for privacy:**
+  - It turns off the malicious-add-on blocklist and Safe Browsing.
+  - It makes DNS-over-HTTPS the *only* resolver, so lookups fail if that server is unreachable.
+  - The file's header lists all of these. **Read it and delete what you don't want** before applying it with `./install.sh --privacy-prefs`, or copy individual lines yourself.
 
 ## Updating Firefox
 

@@ -6,6 +6,8 @@
 #   ./install.sh --autoconfig-only   only (re)install the fx-autoconfig loader
 #                                    into the Firefox install dir — needed again
 #                                    after a Firefox package update wipes it
+#   ./install.sh --privacy-prefs     also merge extras/privacy-performance.user.js
+#                                    (optional; READ that file's header first)
 #   ./install.sh --uninstall         remove everything this script installed
 #   ./install.sh --yes               don't ask for confirmation
 #
@@ -25,18 +27,20 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 PROFILE=""
 MODE="install"
 ASSUME_YES=0
+PRIVACY_PREFS=0
 
 die()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 info() { printf '\033[36m::\033[0m %s\n' "$*"; }
 warn() { printf '\033[33mwarning:\033[0m %s\n' "$*" >&2; }
 
-usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
+usage() { sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --profile)          PROFILE="${2:-}"; [[ -n "$PROFILE" ]] || die "--profile needs a directory"; shift 2 ;;
     --autoconfig-only)  MODE="autoconfig"; shift ;;
     --uninstall)        MODE="uninstall"; shift ;;
+    --privacy-prefs)    PRIVACY_PREFS=1; shift ;;
     -y|--yes)           ASSUME_YES=1; shift ;;
     -h|--help)          usage ;;
     *)                  die "unknown option: $1 (see --help)" ;;
@@ -129,8 +133,10 @@ clear_startup_cache() {
   return 0
 }
 
+# merge_user_js PROFILE SOURCE — append SOURCE's prefs that PROFILE/user.js
+# doesn't set yet; existing lines always win
 merge_user_js() {
-  local target="$1/user.js" line key added=0
+  local target="$1/user.js" source="$2" line key added=0
   touch "$target"
   while IFS= read -r line; do
     [[ "$line" =~ ^user_pref\(\"([^\"]+)\" ]] || continue
@@ -140,8 +146,8 @@ merge_user_js() {
     else
       echo "$line" >> "$target"; added=$((added + 1))
     fi
-  done < "$REPO_DIR/user.js"
-  info "user.js: $added pref(s) added"
+  done < "$source"
+  info "user.js: $added pref(s) added from $(basename "$source")"
 }
 
 INSTALL_DIR="$(find_install_dir)" || die "couldn't find the Firefox install directory (looked for omni.ja)"
@@ -181,6 +187,7 @@ echo "  • install the fx-autoconfig loader into $INSTALL_DIR (may ask for sudo
 [[ -d "$PROFILE/chrome" ]] && echo "  • move your current chrome/ folder to chrome.backup-$STAMP/"
 echo "  • install firefox-revamp into $PROFILE/chrome/"
 echo "  • add the required prefs to $PROFILE/user.js"
+[[ $PRIVACY_PREFS -eq 1 ]] && echo "  • ALSO add the optional privacy/performance prefs (extras/privacy-performance.user.js)"
 echo
 confirm "Continue?" || exit 1
 
@@ -195,7 +202,8 @@ cp -r "$REPO_DIR/chrome/." "$PROFILE/chrome/"
 cp -r "$VENDOR/profile/chrome/utils" "$PROFILE/chrome/utils"
 info "installed chrome/ files"
 
-merge_user_js "$PROFILE"
+merge_user_js "$PROFILE" "$REPO_DIR/user.js"
+[[ $PRIVACY_PREFS -eq 1 ]] && merge_user_js "$PROFILE" "$REPO_DIR/extras/privacy-performance.user.js"
 clear_startup_cache "$PROFILE"
 
 echo
