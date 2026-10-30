@@ -189,6 +189,13 @@
       // `next` only while it's really a child of the home parent, and run two
       // passes — the first brings everything home, the second puts each node
       // back before a neighbour that has meanwhile returned too.
+      // Only nodes still sitting in OUR rows are ours to restore. Stock may
+      // have moved one meanwhile — unpinning an extension in vertical mode
+      // sends it to the extensions panel — and "restoring" that one would
+      // drag it out of the panel into the one-liner, among the tabs.
+      for (const node of CTRL_HOME.keys()) {
+        if (!node.parentElement?.classList.contains("uc-vt-row")) CTRL_HOME.delete(node);
+      }
       const fallback = document.getElementById("nav-bar-customization-target");
       for (let pass = 0; pass < 2; pass++) {
         for (const [node, home] of CTRL_HOME) {
