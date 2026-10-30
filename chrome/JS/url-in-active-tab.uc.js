@@ -8,60 +8,8 @@
 // @ignorecache
 // ==/UserScript==
 
-// WHY A SEPARATE ELEMENT: <tab>'s .tab-label text is bound to the tab's
-// "label" attribute via a custom-element observer (see tab.mjs ".tab-label":
-// "text=label,..."). Writing .tab-label.textContent gets overwritten by Firefox
-// on the next label-attribute update. So instead we inject our OWN element
-// (.uc-url-label) that Firefox doesn't manage, and hide the real .tab-label
-// via CSS on the selected tab only.
 (() => {
   console.log("[url-in-active-tab] evaluating");
-
-  const URL_CLASS = "uc-url-label";
-
-  // The in-tab URL ("tab url bar") is RETIRED — the urlbar is the floating
-  // palette now and tabs only show their title. Keeps sync() wired but inert
-  // (flip to true to bring the URL text back into the selected tab).
-  const SHOW_URL_IN_TAB = false;
-
-  const getUrl = (tab) => {
-    try { return tab.linkedBrowser?.currentURI?.spec || ""; } catch { return ""; }
-  };
-
-  // --- Part 1: inject URL text into the selected tab (RETIRED) ---
-  const sync = () => {
-    if (!SHOW_URL_IN_TAB) return false;
-    const gB = window.gBrowser;
-    if (!gB) return false;
-    const sel = gB.selectedTab;
-
-    for (const tab of gB.tabs) {
-      const container = tab.querySelector(".tab-label-container");
-      if (!container) continue;
-
-      const existing = container.querySelector("." + URL_CLASS);
-
-      if (tab === sel) {
-        const url = getUrl(tab);
-        if (url) {
-          let el = existing;
-          if (!el) {
-            el = container.ownerDocument.createElement("label");
-            el.className = URL_CLASS;
-            const real = container.querySelector(".tab-label");
-            if (real && real.nextSibling) container.insertBefore(el, real.nextSibling);
-            else container.appendChild(el);
-          }
-          if (el.textContent !== url) el.textContent = url;
-        } else if (existing) {
-          existing.remove();
-        }
-      } else if (existing) {
-        existing.remove();
-      }
-    }
-    return true;
-  };
 
   // --- Vertical-tabs mode awareness -----------------------------------------
   // GROUND-UP CONTRACT: STOCK owns vertical mode — its sidebar, the strip's
@@ -454,17 +402,8 @@
   const attach = () => {
     const gB = window.gBrowser;
     if (!gB) return;
-    const c = gB.tabContainer;
-    c.addEventListener("TabSelect", sync);
-    c.addEventListener("TabOpen", sync);
-    c.addEventListener("TabClose", sync);
-    c.addEventListener("TabAttrModified", (e) => {
-      if (e.target === gB.selectedTab) sync();
-    });
-    gB.tabContainer.addEventListener("load", sync, true);
     relocateTabs();
     attachTabHomeWatch();
-    sync();
     attachMeasure();
     attachDblClick();
     attachTypeToSearch();

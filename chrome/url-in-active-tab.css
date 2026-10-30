@@ -421,21 +421,6 @@
 }
 
 /* ======================================================================
-   E. TAB — the in-tab URL ("tab url bar") is fully RETIRED: the urlbar is
-   the floating palette now, so tabs are just tabs — normal title label,
-   stock sizing.
-   - .uc-url-label: any injected URL text stays hidden (the JS injection is
-     switched off too — SHOW_URL_IN_TAB flag).
-   - the old `min-width: 160px` on the SELECTED tab existed to give the
-     overlaid address field a wide enough host — it also STRETCHED PINNED
-     tabs (stock ≈44px, favicon-only) to 160px whenever they were selected.
-     Removed → pinned tabs keep their compact look in every state.
-   ====================================================================== */
-.uc-url-label {
-  display: none !important;
-}
-
-/* ======================================================================
    F. VERTICAL TABS MODE — STOCK OWNS THE SIDEBAR.
    The sidebar, the strip orientation, pinned tabs, the launcher — all
    stock. What we add: the one-liner row collapses, and its controls (moved
