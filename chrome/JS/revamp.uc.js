@@ -28,7 +28,7 @@
     catch { return false; }
   };
 
-  // --- Part 2: move the tab strip into the nav bar so tabs sit in the middle ---
+  // --- Part 1: move the tab strip into the nav bar so tabs sit in the middle ---
   // The nav bar already contains [back fwd reload] … [padlock shield star] …
   // [extensions] [menu]. By relocating #tabbrowser-tabs into the nav bar's
   // customization target and using CSS `order`, we interleave tabs between the
@@ -286,7 +286,7 @@
     console.log("[revamp] vertical-tabs re-home watch attached");
   };
 
-  // --- Part 3: measure the FLOATING urlbar palette → CSS vars -------------
+  // --- Part 2: measure the FLOATING urlbar palette → CSS vars -------------
   // The palette centers itself with pure CSS (position:fixed, left:50% of
   // the viewport). JS only REPORTS its exact box so the position:fixed
   // suggestions view lands pixel-identical under it — SAME left and,
@@ -345,7 +345,7 @@
     console.log("[revamp] field measurement attached");
   };
 
-  // --- Part 4: double-click a tab = Ctrl+L (focus the address bar) --------
+  // --- Part 3: double-click a tab = Ctrl+L (focus the address bar) --------
   // Focus the address bar the same way Ctrl+L does. Synchronous: the "focusin"
   // listener re-measures the palette before it paints.
   const focusUrlbar = () => {

@@ -69,7 +69,7 @@
 
 /* --- VERTICAL TABS MODE: the row-layout rules below are horizontal-mode
    furniture; in vertical mode the strip lives in stock's sidebar and the
-   one-liner collapses (section F at the end of the file). --- */
+   one-liner collapses (section E at the end of the file). --- */
 
 /* Empty original TabsToolbar: drop leftover chrome, keep window controls. */
 #TabsToolbar { padding: 0 !important; }
@@ -421,7 +421,7 @@
 }
 
 /* ======================================================================
-   F. VERTICAL TABS MODE — STOCK OWNS THE SIDEBAR.
+   E. VERTICAL TABS MODE — STOCK OWNS THE SIDEBAR.
    The sidebar, the strip orientation, pinned tabs, the launcher — all
    stock. What we add: the one-liner row collapses, and its controls (moved
    by JS into two <toolbar> rows inside #vertical-tabs) sit above the strip:

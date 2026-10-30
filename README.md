@@ -100,7 +100,7 @@ Run the install command again. Each run backs up your previous `chrome/` folder.
 
 - Accent colour: `#00ddff` in `chrome/userChrome.css`.
 - Address bar width: `--uc-pill-w` in `chrome/revamp.css`.
-- Sidebar layout: section F of `chrome/revamp.css`, and `syncControlsHome()` in `chrome/JS/revamp.uc.js`.
+- Sidebar layout: section E of `chrome/revamp.css`, and `syncControlsHome()` in `chrome/JS/revamp.uc.js`.
 
 Firefox only reads these files at startup, so restart it fully after a change.
 
