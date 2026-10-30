@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # firefox-revamp installer (Linux)
 #
+# One-liner (no git needed — downloads the repo itself):
+#   curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash
+# Options go after `bash -s --`, e.g.:
+#   curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash -s -- --autoconfig-only
+#
 #   ./install.sh                     install into the default Firefox profile
 #   ./install.sh --profile DIR       install into a specific profile directory
 #   ./install.sh --autoconfig-only   only (re)install the fx-autoconfig loader
@@ -20,7 +25,27 @@
 #   4. Clears Firefox's startup cache so the scripts load on next start.
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARBALL="https://github.com/adior-enigmac/firefox-revamp/archive/refs/heads/main.tar.gz"
+
+die()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+info() { printf '\033[36m::\033[0m %s\n' "$*"; }
+warn() { printf '\033[33mwarning:\033[0m %s\n' "$*" >&2; }
+
+# Run from a checkout → use the files next to this script. Piped through
+# `curl | bash` there are none (BASH_SOURCE is empty) → fetch the repo tarball
+# into a temp dir that is removed again on exit.
+SCRIPT_PATH="${BASH_SOURCE[0]:-}"
+if [[ -n "$SCRIPT_PATH" && -d "$(dirname "$SCRIPT_PATH")/chrome" ]]; then
+  REPO_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+else
+  command -v curl >/dev/null 2>&1 || die "curl is required"
+  command -v tar  >/dev/null 2>&1 || die "tar is required"
+  REPO_DIR="$(mktemp -d)"
+  trap 'rm -rf "$REPO_DIR"' EXIT
+  info "downloading firefox-revamp…"
+  curl -fsSL "$TARBALL" | tar -xz -C "$REPO_DIR" --strip-components=1 \
+    || die "download failed: $TARBALL"
+fi
 VENDOR="$REPO_DIR/vendor/fx-autoconfig"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
@@ -29,11 +54,7 @@ MODE="install"
 ASSUME_YES=0
 PRIVACY_PREFS=0
 
-die()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
-info() { printf '\033[36m::\033[0m %s\n' "$*"; }
-warn() { printf '\033[33mwarning:\033[0m %s\n' "$*" >&2; }
-
-usage() { sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
+usage() { sed -n '2,28p' "$REPO_DIR/install.sh" | sed 's/^# \{0,1\}//'; exit 0; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -49,9 +70,12 @@ done
 
 [[ "$(uname -s)" == "Linux" ]] || die "this installer supports Linux only — see README for macOS/Windows"
 
+# Prompts read from the terminal, not stdin: under `curl | bash` stdin is the
+# script itself.
 confirm() {
   [[ $ASSUME_YES -eq 1 ]] && return 0
-  read -r -p "$1 [y/N] " reply
+  [[ -r /dev/tty ]] || die "no terminal to ask on — rerun with --yes"
+  read -r -p "$1 [y/N] " reply </dev/tty
   [[ "$reply" =~ ^[Yy]$ ]]
 }
 
@@ -209,4 +233,4 @@ clear_startup_cache "$PROFILE"
 echo
 info "Done. Start Firefox. Vertical tabs: Settings → General → Browser Layout,"
 info "or set sidebar.verticalTabs in about:config."
-info "After a Firefox package update, if the layout breaks, run: ./install.sh --autoconfig-only"
+info "After a Firefox package update, if the layout breaks, rerun with --autoconfig-only"

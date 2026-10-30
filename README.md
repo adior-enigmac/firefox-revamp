@@ -34,11 +34,18 @@ A minimal, Zen-style Firefox UI built from `userChrome.css` plus one small scrip
 
 ## Install (Linux)
 
+Quit Firefox completely, then run:
+
 ```sh
-git clone https://github.com/adior-enigmac/firefox-revamp.git
-cd firefox-revamp
-# quit Firefox completely first
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash
+```
+
+You don't need git: the script downloads the repo into a temporary folder and deletes it afterwards. If you'd rather read the script before running it (a good habit with `curl | bash`), download it first:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh
+less install.sh
+bash install.sh
 ```
 
 The installer:
@@ -48,15 +55,15 @@ The installer:
 3. **Adds the required prefs** to your profile's `user.js`, without overwriting existing lines.
 4. **Clears Firefox's startup cache,** so the script loads on the next start.
 
-Options:
+Options go after `bash -s --`, for example `curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash -s -- --uninstall`:
 
-| Command | What it does |
+| Option | What it does |
 |---|---|
-| `./install.sh --profile ~/.mozilla/firefox/xxxx.default-release` | Install into a specific profile. |
-| `./install.sh --autoconfig-only` | Reinstall only the loader (see *Updating Firefox*). |
-| `./install.sh --privacy-prefs` | Also apply the optional privacy/performance prefs (see below). |
-| `./install.sh --uninstall` | Remove everything the installer added. |
-| `./install.sh --yes` | Skip the confirmation prompt. |
+| `--profile ~/.mozilla/firefox/xxxx.default-release` | Install into a specific profile. |
+| `--autoconfig-only` | Reinstall only the loader (see *Updating Firefox*). |
+| `--privacy-prefs` | Also apply the optional privacy/performance prefs (see below). |
+| `--uninstall` | Remove everything the installer added. |
+| `--yes` | Skip the confirmation prompt. |
 
 Then start Firefox. To try vertical tabs, go to **Settings → General → Browser layout → Vertical tabs**, or set `sidebar.verticalTabs` to `true` in `about:config`.
 
@@ -78,21 +85,22 @@ Then start Firefox. To try vertical tabs, go to **Settings → General → Brows
 - **Some lines trade safety for privacy:**
   - It turns off the malicious-add-on blocklist and Safe Browsing.
   - It makes DNS-over-HTTPS the *only* resolver, so lookups fail if that server is unreachable.
-  - The file's header lists all of these. **Read it and delete what you don't want** before applying it with `./install.sh --privacy-prefs`, or copy individual lines yourself.
+  - The file's header lists all of these. **Read it and delete what you don't want** and copy the lines you want into `<profile>/user.js` yourself. If you want the whole file as it is, add `--privacy-prefs` to the install command.
 
 ## Updating Firefox
 
 Some distro packages, Arch among them, replace the install folder on every Firefox update, which removes `config.js`. If the layout suddenly looks broken after an update (tabs back in their own row, buttons missing in the sidebar), quit Firefox and run:
 
 ```sh
-./install.sh --autoconfig-only
+curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash -s -- --autoconfig-only
 ```
 
 ## Updating firefox-revamp
 
+Run the install command again:
+
 ```sh
-git pull
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/install.sh | bash
 ```
 
 Your previous `chrome/` folder is backed up each time.
@@ -108,7 +116,7 @@ Every change needs a **full** quit and restart of Firefox, because userChrome fi
 ## Troubleshooting
 
 - **Nothing changed at all:** check that `toolkit.legacyUserProfileCustomizations.stylesheets` is `true` in `about:config`, and that you installed into the profile Firefox actually uses (shown in `about:support`).
-- **The CSS applies but the layout is broken:** the script isn't loading. Run `./install.sh --autoconfig-only`, clear the startup cache, and restart.
+- **The CSS applies but the layout is broken:** the script isn't loading. Rerun the installer with `--autoconfig-only` (see *Updating Firefox*), clear the startup cache, and restart.
 - **Lines starting with `[url-in-active-tab]`** in the Browser Console (Ctrl+Shift+J) show what the script is doing.
 
 ## Credits
