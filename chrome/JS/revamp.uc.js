@@ -71,13 +71,13 @@
   // (#vertical-tabs — the element CustomizableUI uses for the strip widget),
   // in two rows around the strip:
   //   #uc-vt-top  [◀][▶][⟳][🧩][☰]       (above the strip)
-  //   #uc-vt-ext        [pinned ext…]    (below the strip)
+  //   #uc-vt-ext  [⬇]   [pinned ext…]    (below the strip)
   // The rows are real <toolbar> elements: stock's button design (padding,
   // rounded hover/active background, focus ring) is keyed on
   // `toolbar .toolbarbutton-1`, and #vertical-tabs is a plain <box> — without
   // a toolbar ancestor the buttons lose that look. Rows flex-wrap, so the
   // layout follows the sidebar's width (collapsed rail → one icon per line).
-  // The ext row is right-aligned.
+  // The ext row is right-aligned; ⬇ downloads sits at its left end.
   // Exact original slots are remembered and restored on toggle-off. Plain
   // DOM moves are safe: toolbar buttons keep all their listeners (stock
   // itself moves nodes like this in toggleTabstrip/initializeForTabsOrientation).
@@ -97,11 +97,20 @@
   // extension browser-actions carry their own listeners — unaffected.)
   const DELEGATED = {
     "unified-extensions-button": e => window.gUnifiedExtensions?.togglePanel(e),
+    "downloads-button": e => window.DownloadsIndicatorView?.onCommand(e),
   };
   const forwardDelegated = e => {
     if (e.type === "keypress" && e.key !== "Enter" && e.key !== " ") return;
     const btn = e.target.closest?.(Object.keys(DELEGATED).map(id => "#" + id).join(","));
     if (btn) DELEGATED[btn.id](e);
+  };
+  // ⬇ is also a drop target (drop a link on it to download it) — the same
+  // toolbox delegation, for drag events.
+  const forwardDownloadsDrop = e => {
+    if (!e.target.closest?.("#downloads-button")) return;
+    const view = window.DownloadsIndicatorView;
+    if (e.type === "drop") view?.onDrop(e);
+    else view?.onDragOver(e);
   };
 
   const ensureRow = (stripArea, id) => {
@@ -113,6 +122,9 @@
       row.setAttribute("mode", "icons");
       row.addEventListener("mousedown", forwardDelegated);
       row.addEventListener("keypress", forwardDelegated, { capture: true });
+      for (const type of ["dragenter", "dragover", "drop"]) {
+        row.addEventListener(type, forwardDownloadsDrop);
+      }
     }
     if (row.parentElement !== stripArea) stripArea.prepend(row);
     return row;
@@ -146,6 +158,21 @@
     }
   };
 
+  // Stock's default vertical-tabs layout leaves ⬇ out of the toolbars, so
+  // there'd be nothing to move. Put it back in the nav bar ONCE (the pref
+  // remembers), so removing it later in Customize sticks.
+  const DOWNLOADS_PREF = "revamp.downloads.placed";
+  const ensureDownloadsPlaced = () => {
+    if (Services.prefs.getBoolPref(DOWNLOADS_PREF, false)) return;
+    const CUI = window.CustomizableUI;
+    if (!CUI) return;
+    Services.prefs.setBoolPref(DOWNLOADS_PREF, true);
+    if (!CUI.getPlacementOfWidget("downloads-button")) {
+      CUI.addWidgetToArea("downloads-button", CUI.AREA_NAVBAR);
+      console.log("[revamp] added downloads button to the nav bar");
+    }
+  };
+
   const moveInto = (row, node) => {
     if (!node || node.parentElement === row) return;
     if (!CTRL_HOME.has(node)) {
@@ -163,6 +190,8 @@
       const topRow = ensureRow(stripArea, ROW_TOP_ID);
       for (const id of TOP_IDS) moveInto(topRow, document.getElementById(id));
       adoptShadowSheet();
+      ensureDownloadsPlaced();
+      moveInto(extRow, document.getElementById("downloads-button"));
       // ONLY the extension buttons already pinned in the
       // one-liner. The extension query is scoped to the nav-bar target:
       // `.unified-extensions-item` also names the ALL-EXTENSIONS panel's

@@ -546,6 +546,17 @@
   #vertical-tabs > #uc-vt-ext {
     justify-content: flex-end !important;
   }
+  /* …except ⬇ downloads: first in the row, pushed to the left edge by its
+     auto end margin. Stock's "Auto-hide in Toolbar" (right-click) still
+     applies: with no downloads it's `hidden`, and a row left with nothing
+     visible collapses instead of keeping its padding. */
+  #vertical-tabs > #uc-vt-ext > #downloads-button {
+    order: -100 !important;
+    margin-inline-end: auto !important;
+  }
+  #vertical-tabs > #uc-vt-ext:not(:has(> :not([hidden]))) {
+    display: none !important;
+  }
 
   /* RAIL (collapsed launcher): every icon on the rail's centre line, like
      the tab icons below. Three things pulled them off it: the extension row's
@@ -555,6 +566,9 @@
      furniture, so they go in both sidebar states. */
   #sidebar-container:not([sidebar-launcher-expanded]) #vertical-tabs > #uc-vt-ext {
     justify-content: center !important;
+  }
+  #sidebar-container:not([sidebar-launcher-expanded]) #vertical-tabs > #uc-vt-ext > #downloads-button {
+    margin-inline-end: 0 !important;
   }
   /* the rail's VISIBLE strip (divider → window edge) is wider than the
      launcher box on the window-edge side, so icons centred in the box read

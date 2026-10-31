@@ -24,10 +24,11 @@ Vertical tabs:
 ```
 [◀][▶][⟳][🧩][☰]
 [ tabs … ]
-          [pinned ext]
+[⬇]       [pinned ext]
 ```
 
 - The buttons move into Firefox's sidebar and wrap to fit its width.
+- The downloads button sits in the bottom-left corner of the sidebar. Like in the top bar, it hides while there are no downloads unless you untick *Auto-hide in Toolbar* in its right-click menu.
 - The bookmarks and history sidebar (Ctrl+B / Ctrl+H) works as usual.
 - Ctrl+Alt+Z hides the sidebar and shows it again, expanded or collapsed as it was.
 - Drag the sidebar narrower than 150px and it collapses to icons. Expanding it again restores the width it had before.
