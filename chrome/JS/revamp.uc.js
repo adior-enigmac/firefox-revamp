@@ -469,8 +469,8 @@
       return r;
     };
 
-    // arrows move through the GRID (stock only steps linearly via Tab):
-    // ←/→ = previous/next, ↑/↓ = same column one row up/down (no-op at edges)
+    // arrows / Vim keys move through the GRID (stock only steps linearly via
+    // Tab): ←/h, →/l = previous/next; ↑/k, ↓/j = same column one row up/down.
     const moveTo = (i) => {
       const p = ct.previews[i];
       if (!p || p.hidden || !p._tab) return;
@@ -486,12 +486,17 @@
     };
     document.addEventListener("keydown", (e) => {
       if (!ct.isOpen) return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       const step = {
         ArrowLeft: -1,
+        h: -1,
         ArrowRight: 1,
+        l: 1,
         ArrowUp: -ct.previewColumnCount,
+        k: -ct.previewColumnCount,
         ArrowDown: ct.previewColumnCount,
-      }[e.key];
+        j: ct.previewColumnCount,
+      }[key];
       if (!step) return;
       e.preventDefault();
       e.stopPropagation();
