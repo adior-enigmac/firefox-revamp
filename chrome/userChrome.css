@@ -10,7 +10,7 @@
 /* Main layout: one-liner row, floating URL palette, vertical-tabs sidebar */
 @import url("revamp.css");
 /* =========================================================================
-   POPUP / MENU THEME — dark panels, accent (#00ddff) on hover/checked.
+   POPUP / MENU THEME — dark panels with the theme's primary accent.
    Follows the active theme's colours via --lwt-* / toolbar variables.
    ========================================================================= */
 
@@ -61,18 +61,18 @@ menu:is(:hover, [_moz-menuactive="true"]):not([disabled]),
 menuitem:is(:hover, [_moz-menuactive="true"]):not([disabled]) {
     background-color: var(--toolbarbutton-background-color-hover,
             rgba(255, 255, 255, 0.1)) !important;
-    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Subview Hover (Hamburger menu text color) */
 panelview .toolbarbutton-1:not([disabled]):is(:hover, :active),
 .subviewbutton:not([disabled]):not(#appMenu-zoomReduce-button2, #appMenu-zoomReset-button2, #appMenu-zoomEnlarge-button2, #appMenu-fullscreen-button2):is(:hover, :active) {
-    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Menubar */
 menubar>menu[open] {
-    border-bottom: 2px solid var(--tab-loading-fill, #00ddff) !important;
+    border-bottom: 2px solid var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Separator */
@@ -118,12 +118,12 @@ menuitem[type="checkbox"]>.menu-icon {
 /* Checked */
 menuitem[type="checkbox"][checked]>.menu-icon,
 menuitem[type="radio"][checked]>.menu-icon {
-    background-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    background-color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Hover effect on toggle */
 menuitem:is(:hover, [_moz-menuactive="true"])>.menu-icon {
-    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    border-color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Hover + checked */
@@ -140,7 +140,7 @@ notification,
     --message-bar-background-color: var(--toolbar-field-background-color,
             #2b2a33) !important;
     --message-bar-text-color: var(--lwt-text-color, #fbfbfe) !important;
-    --message-bar-icon-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    --message-bar-icon-color: var(--toolbarbutton-icon-fill) !important;
     background-color: var(--toolbar-field-background-color, #2b2a33) !important;
     color: var(--lwt-text-color, #fbfbfe) !important;
     border: 1px solid var(--toolbar-field-background-color-focus, #42414d) !important;
@@ -154,8 +154,8 @@ notification-message .container {
 
 moz-message-bar .icon,
 notification-message .icon {
-    fill: var(--toolbarbutton-icon-fill, #00ddff) !important;
-    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    fill: var(--toolbarbutton-icon-fill) !important;
+    color: var(--toolbarbutton-icon-fill) !important;
 }
 
 moz-message-bar moz-button.close,
@@ -170,8 +170,8 @@ moz-message-bar moz-button.close:hover,
 notification-message moz-button.close:hover {
     background-color: var(--toolbarbutton-background-color-hover,
             rgba(255, 255, 255, 0.1)) !important;
-    fill: var(--toolbarbutton-icon-fill, #00ddff) !important;
-    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    fill: var(--toolbarbutton-icon-fill) !important;
+    color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Exit Full Screen Button */
@@ -191,15 +191,15 @@ notification-message moz-button.close:hover {
 #fullscreen-exit-button:hover,
 #pointerlock-exit-button:hover {
     background-color: var(--toolbarbutton-background-color-hover, rgba(255, 255, 255, 0.1)) !important;
-    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
-    color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    border-color: var(--toolbarbutton-icon-fill) !important;
+    color: var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Ctrl+Tab Active Border */
 .ctrlTab-preview:focus>.ctrlTab-preview-inner,
 .ctrlTab-preview[selected="true"]>.ctrlTab-preview-inner {
-    border-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
-    box-shadow: 0 0 0 1px var(--toolbarbutton-icon-fill, #00ddff) !important;
+    border-color: var(--toolbarbutton-icon-fill) !important;
+    box-shadow: 0 0 0 1px var(--toolbarbutton-icon-fill) !important;
 }
 
 /* Autoscroller Theme */
@@ -222,7 +222,7 @@ notification-message moz-button.close:hover {
     display: block !important;
     position: absolute !important;
     inset: 0 !important;
-    background-color: var(--toolbarbutton-icon-fill, #00ddff) !important;
+    background-color: var(--toolbarbutton-icon-fill) !important;
     mask-image: var(--autoscroll-background-image) !important;
     mask-repeat: no-repeat !important;
     mask-position: center !important;

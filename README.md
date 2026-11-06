@@ -137,7 +137,7 @@ before uninstalling to restore a preference backup, or edit them manually.
 
 ## Customising
 
-- Accent colour: `#00ddff` in `chrome/userChrome.css`.
+- Accent colour follows Firefox's theme primary accent (`--toolbarbutton-icon-fill`).
 - Address bar width: `--uc-pill-w` in `chrome/revamp.css`.
 - Sidebar layout: section E of `chrome/revamp.css`, and `syncControlsHome()` in `chrome/JS/revamp.uc.js`.
 
