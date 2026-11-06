@@ -11,3 +11,5 @@ user_pref("svg.context-properties.content.enabled", true);
 user_pref("sidebar.revamp", true);
 // Keep the existing Firefox interface used by Firefox Revamp's customization.
 user_pref("browser.nova.enabled", false);
+// compact view of topbar and the settings menu padding
+user_pref("browser.compactmode.show", true);
