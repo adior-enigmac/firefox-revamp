@@ -101,8 +101,7 @@ To use vertical tabs, go to Settings → General → Browser layout, or set `sid
 Every normal install merges the telemetry and sponsored-content choices in
 `extras/privacy.user.js`. Safe Browsing, malicious extension blocking,
 certificate validation/revocation checks and Firefox updates remain enabled.
-The former combined `extras/privacy-performance.user.js` is a deprecated empty
-stub. Settings already present in a profile's `user.js` are not removed
+Settings already present in a profile's `user.js` are not removed
 automatically; review those values manually.
 
 Firefox Revamp does not currently apply performance tweaks. Firefox keeps its
