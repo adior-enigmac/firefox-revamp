@@ -9,9 +9,6 @@
 @import url("my-navbar-order.css");
 /* Main layout: one-liner row, floating URL palette, vertical-tabs sidebar */
 @import url("revamp.css");
-/* Hides stock launcher bits (new-tab button in the sidebar, spacer, …) */
-@import url("toggler.css");
-
 /* =========================================================================
    POPUP / MENU THEME — dark panels, accent (#00ddff) on hover/checked.
    Follows the active theme's colours via --lwt-* / toolbar variables.

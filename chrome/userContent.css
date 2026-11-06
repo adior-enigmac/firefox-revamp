@@ -1,0 +1,9 @@
+/* Hide the New Tab / Home page's Edit (personalize) button. This page is
+   content UI, so the rule belongs in userContent.css rather than userChrome. */
+@-moz-document url("about:newtab"), url("about:home") {
+  .personalizeButtonWrapper,
+  .personalize-button,
+  .open-customization-button {
+    display: none !important;
+  }
+}

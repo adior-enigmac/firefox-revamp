@@ -41,6 +41,12 @@ Both layouts:
 - In fullscreen, move the mouse to the top edge to bring the top bar back.
 - Tools → Reveal Hidden Bars on Hover does the same outside fullscreen: a hidden top bar comes back from the top edge, and a hidden sidebar from its side of the window. Both hide again when the mouse moves back into the page.
 
+The default preferences also set `browser.nova.enabled` to `false` to retain the
+Firefox interface this customization targets. This is a hidden, version-specific
+preference and Mozilla may remove it in a future release. The New Tab/Home Edit
+button is hidden by `chrome/userContent.css`; stock sidebar and new-tab controls
+are hidden by rules merged into `chrome/revamp.css`.
+
 ## Requirements
 
 - Firefox 159. Newer versions should work, but a Firefox update can change the elements this styles.
@@ -72,7 +78,6 @@ curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/i
 |---|---|
 | `--profile DIR` | Install into this profile folder instead of the default one. |
 | `--autoconfig-only` | Reinstall only the script loader. |
-| `--performance PROFILE` | Select `low-end`, `balanced`, `high-performance`, or `auto`; retains Firefox defaults. |
 | `--dry-run` | Preview actions without writing. |
 | `--rollback` | Restore the newest backed-up `user.js`. |
 | `--uninstall` | Remove what the script installed. |
@@ -91,39 +96,24 @@ To use vertical tabs, go to Settings → General → Browser layout, or set `sid
 4. Add the prefs from `user.js` to `<profile>/user.js`, or set them in `about:config`.
 5. In `about:support`, click *Clear startup cache…*, then restart Firefox.
 
-## Performance profiles and privacy defaults
+## Privacy defaults
 
-Firefox Revamp remains a minimal UI customization first. The default install
-also applies the project's privacy preferences and selects the automatic
-performance profile. `--performance low-end`, `balanced`,
-`high-performance`, or `auto` chooses a target while retaining
-Firefox's own process, cache, renderer and decoder defaults. The audit found no
-universal manual preference with demonstrated gains, so profiles currently
-make no performance preference overrides.
+Every normal install merges the telemetry and sponsored-content choices in
+`extras/privacy.user.js`. Safe Browsing, malicious extension blocking,
+certificate validation/revocation checks and Firefox updates remain enabled.
+The former combined `extras/privacy-performance.user.js` is a deprecated empty
+stub. Settings already present in a profile's `user.js` are not removed
+automatically; review those values manually.
 
-`scripts/detect-hardware.sh` reports best-effort Linux RAM, CPU, GPU/driver,
-session and Firefox package information. `lspci`, `glxinfo` and `vulkaninfo`
-are optional. The `auto` heuristic uses total RAM and logical CPU count; it
-cannot establish GPU features or Firefox decoder support.
-
-Every normal install merges the telemetry/sponsored-content choices in
-`extras/privacy.user.js` and selects the auto performance profile. Add
-`--performance PROFILE` to choose a specific profile instead. These profiles
-currently keep Firefox's performance defaults.
-Safe Browsing, malicious extension blocking, certificate validation/revocation
-checks and updates remain enabled.
-The former combined `extras/privacy-performance.user.js` is now a deprecated
-empty stub; settings already present in a profile's `user.js` are not removed
-automatically. Review those values manually. See
-[`docs/performance-preferences.md`](docs/performance-preferences.md) and
-[`tests/performance-validation.md`](tests/performance-validation.md).
+Firefox Revamp does not currently apply performance tweaks. Firefox keeps its
+own hardware-based process, cache, renderer and decoder decisions.
 
 ## Configuration management
 
 Firefox reads `user.js` at startup and reapplies its values each time. The
 installer appends missing preference names and leaves existing values in
 place, reporting conflicts. `--dry-run` previews actions without writing.
-Performance/privacy changes save a timestamped `user.js.firefox-revamp-backup-*`;
+Preference changes save a timestamped `user.js.firefox-revamp-backup-*`;
 `--rollback` restores the newest such backup. Profile files need no root access;
 the system Firefox installation may require it for fx-autoconfig.
 

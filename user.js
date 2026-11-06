@@ -9,3 +9,5 @@ user_pref("userchrome.navbar-tabs-oneliner.tabs-on-right.enabled", true);
 user_pref("svg.context-properties.content.enabled", true);
 // new sidebar — required for vertical-tabs mode (default on in recent builds)
 user_pref("sidebar.revamp", true);
+// Keep the existing Firefox interface used by Firefox Revamp's customization.
+user_pref("browser.nova.enabled", false);

@@ -11,8 +11,6 @@
 #   ./install.sh --autoconfig-only   only (re)install the fx-autoconfig loader
 #                                    into the Firefox install dir — needed again
 #                                    after a Firefox package update wipes it
-#   ./install.sh                     apply privacy prefs + auto performance profile
-#   ./install.sh --performance auto   select/document a performance profile
 #   ./install.sh --dry-run            show changes without writing
 #   ./install.sh --rollback           restore newest installer backups
 #   ./install.sh --uninstall         remove everything this script installed
@@ -54,7 +52,6 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 PROFILE=""
 MODE="install"
 ASSUME_YES=0
-PERFORMANCE=""
 DRY_RUN=0
 ROLLBACK=0
 
@@ -65,7 +62,6 @@ while [[ $# -gt 0 ]]; do
     --profile)          PROFILE="${2:-}"; [[ -n "$PROFILE" ]] || die "--profile needs a directory"; shift 2 ;;
     --autoconfig-only)  MODE="autoconfig"; shift ;;
     --uninstall)        MODE="uninstall"; shift ;;
-    --performance)      PERFORMANCE="${2:-}"; [[ -n "$PERFORMANCE" ]] || die "--performance needs a profile"; shift 2 ;;
     --dry-run)          DRY_RUN=1; shift ;;
     --rollback)         ROLLBACK=1; shift ;;
     -y|--yes)           ASSUME_YES=1; shift ;;
@@ -73,12 +69,6 @@ while [[ $# -gt 0 ]]; do
     *)                  die "unknown option: $1 (see --help)" ;;
   esac
 done
-
-# Privacy preferences and the adaptive performance profile are part of the
-# default install. Keep an explicitly selected profile; otherwise use auto.
-if [[ -z "$PERFORMANCE" ]]; then
-  PERFORMANCE="auto"
-fi
 
 [[ "$(uname -s)" == "Linux" ]] || die "this installer supports Linux only — see README for macOS/Windows"
 
@@ -199,18 +189,6 @@ fi
 [[ -d "$PROFILE" ]] || die "profile directory not found: $PROFILE"
 info "profile: $PROFILE"
 
-if [[ -n "$PERFORMANCE" ]]; then
-  case "$PERFORMANCE" in auto|low-end|balanced|high-performance) ;;
-    *) die "unknown performance profile: $PERFORMANCE";;
-  esac
-  PERFORMANCE_FILE="$REPO_DIR/extras/performance/$PERFORMANCE.user.js"
-  if [[ "$PERFORMANCE" == auto ]]; then
-    PERFORMANCE="$("$REPO_DIR/scripts/generate-performance-config.sh" auto | sed -n 's/^Selected profile: \([^ ]*\).*/\1/p')"
-    PERFORMANCE_FILE="$REPO_DIR/extras/performance/$PERFORMANCE.user.js"
-    info "auto selected $PERFORMANCE from RAM and logical CPU count"
-  fi
-fi
-
 if [[ $ROLLBACK -eq 1 ]]; then
   confirm "Restore the newest firefox-revamp profile backup?" || exit 1
   latest="$(ls -1dt "$PROFILE"/user.js.firefox-revamp-backup-* 2>/dev/null | head -n1 || true)"
@@ -244,7 +222,6 @@ echo "  • install the fx-autoconfig loader into $INSTALL_DIR (may ask for sudo
 [[ -d "$PROFILE/chrome" ]] && echo "  • move your current chrome/ folder to chrome.backup-$STAMP/"
 echo "  • install firefox-revamp into $PROFILE/chrome/"
 echo "  • append missing required UI prefs to $PROFILE/user.js (existing values win)"
-[[ -n "$PERFORMANCE" ]] && echo "  • select performance profile: $PERFORMANCE (currently preserves Firefox defaults; no prefs overridden)"
 echo "  • append missing privacy prefs (security protections remain enabled)"
 echo "  • back up user.js before preference changes; report conflicting values"
 echo
@@ -260,7 +237,6 @@ preview_conflicts() {
 }
 preview_conflicts "$REPO_DIR/user.js"
 preview_conflicts "$REPO_DIR/extras/privacy.user.js"
-[[ -n "$PERFORMANCE" ]] && preview_conflicts "$PERFORMANCE_FILE"
 if [[ $DRY_RUN -eq 1 ]]; then info "dry run: no files changed"; exit 0; fi
 confirm "Continue?" || exit 1
 
@@ -278,7 +254,6 @@ info "installed chrome/ files"
 cp -p "$PROFILE/user.js" "$PROFILE/user.js.firefox-revamp-backup-$STAMP" 2>/dev/null || :
 merge_user_js "$PROFILE" "$REPO_DIR/user.js"
 merge_user_js "$PROFILE" "$REPO_DIR/extras/privacy.user.js"
-[[ -n "$PERFORMANCE" ]] && merge_user_js "$PROFILE" "$PERFORMANCE_FILE"
 clear_startup_cache "$PROFILE"
 
 echo

@@ -53,6 +53,17 @@
   }
 }
 
+/* ======================================================================
+   HIDE STOCK NEW-TAB / SIDEBAR CONTROLS
+   Formerly kept in the standalone toggler.css file.
+   ====================================================================== */
+#vertical-tabs-newtab-button,
+#sidebar-tools-and-extensions-splitter,
+#tabs-newtab-button,
+#vertical-spacer {
+  display: none !important;
+}
+
 /* --- HORIZONTAL MODE: the sidebar LAUNCHER (tab rail + its splitter) never
    paints. Stock re-shows it on every vertical → horizontal switch and the JS
    hides it a beat later (hideSidebarOnHorizontal) — this rule makes that
