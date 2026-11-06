@@ -72,7 +72,9 @@ curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/i
 |---|---|
 | `--profile DIR` | Install into this profile folder instead of the default one. |
 | `--autoconfig-only` | Reinstall only the script loader. |
-| `--privacy-prefs` | Also apply `extras/privacy-performance.user.js`. |
+| `--performance PROFILE` | Select `low-end`, `balanced`, `high-performance`, or `auto`; retains Firefox defaults. |
+| `--dry-run` | Preview actions without writing. |
+| `--rollback` | Restore the newest backed-up `user.js`. |
 | `--uninstall` | Remove what the script installed. |
 | `--yes` | Don't ask for confirmation. |
 
@@ -89,11 +91,41 @@ To use vertical tabs, go to Settings → General → Browser layout, or set `sid
 4. Add the prefs from `user.js` to `<profile>/user.js`, or set them in `about:config`.
 5. In `about:support`, click *Clear startup cache…*, then restart Firefox.
 
-## Optional prefs
+## Performance profiles and privacy defaults
 
-`extras/privacy-performance.user.js` turns off telemetry and sponsored content, makes some privacy settings stricter, and tunes Firefox for a machine with little RAM. The UI doesn't need it.
+Firefox Revamp remains a minimal UI customization first. The default install
+also applies the project's privacy preferences and selects the automatic
+performance profile. `--performance low-end`, `balanced`,
+`high-performance`, or `auto` chooses a target while retaining
+Firefox's own process, cache, renderer and decoder defaults. The audit found no
+universal manual preference with demonstrated gains, so profiles currently
+make no performance preference overrides.
 
-It also turns off Safe Browsing and the add-on blocklist, disables OCSP, and sets DNS-over-HTTPS with no fallback. The header of the file lists every change like this. Install it with `--privacy-prefs`, or copy the lines you want into `<profile>/user.js`.
+`scripts/detect-hardware.sh` reports best-effort Linux RAM, CPU, GPU/driver,
+session and Firefox package information. `lspci`, `glxinfo` and `vulkaninfo`
+are optional. The `auto` heuristic uses total RAM and logical CPU count; it
+cannot establish GPU features or Firefox decoder support.
+
+Every normal install merges the telemetry/sponsored-content choices in
+`extras/privacy.user.js` and selects the auto performance profile. Add
+`--performance PROFILE` to choose a specific profile instead. These profiles
+currently keep Firefox's performance defaults.
+Safe Browsing, malicious extension blocking, certificate validation/revocation
+checks and updates remain enabled.
+The former combined `extras/privacy-performance.user.js` is now a deprecated
+empty stub; settings already present in a profile's `user.js` are not removed
+automatically. Review those values manually. See
+[`docs/performance-preferences.md`](docs/performance-preferences.md) and
+[`tests/performance-validation.md`](tests/performance-validation.md).
+
+## Configuration management
+
+Firefox reads `user.js` at startup and reapplies its values each time. The
+installer appends missing preference names and leaves existing values in
+place, reporting conflicts. `--dry-run` previews actions without writing.
+Performance/privacy changes save a timestamped `user.js.firefox-revamp-backup-*`;
+`--rollback` restores the newest such backup. Profile files need no root access;
+the system Firefox installation may require it for fx-autoconfig.
 
 ## If the script stops loading
 
@@ -106,6 +138,13 @@ curl -fsSL https://raw.githubusercontent.com/adior-enigmac/firefox-revamp/main/i
 ## Updating
 
 Run the install command again. Each run backs up your previous `chrome/` folder.
+
+## Uninstallation
+
+Run `./install.sh --uninstall` (or pass `--profile DIR`). The installed
+`chrome/` directory is moved aside and matching fx-autoconfig loader files are
+removed. Preferences in `user.js` are retained, as before; use `--rollback`
+before uninstalling to restore a preference backup, or edit them manually.
 
 ## Customising
 
